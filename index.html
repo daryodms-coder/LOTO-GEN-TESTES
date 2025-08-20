@@ -323,7 +323,7 @@
                                     </table>
                                 </div>
                                 <div id="checkHistoryBtnContainer" class="d-grid gap-2 mt-3 d-none">
-                                    <button id="checkHistoryBtn" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#historyModal"><i class="fas fa-history me-2"></i> Analisar Desempenho Histórico</button>
+                                    <button id="checkHistoryBtn" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#historyModal"><i class="fas fa-history me-2"></i> Analisar Desempenho em Concurso</button>
                                 </div>
                             </div>
                             <div id="resultCheckerSection" class="card-footer d-none">
@@ -356,6 +356,7 @@
             <div class="tab-pane fade" id="analysis-tab-pane" role="tabpanel">
                  <div class="row mt-3">
                     <div class="col-lg-8 mx-auto">
+                        <!-- Frequency Analysis Card -->
                         <div class="card">
                              <div class="card-header text-white">
                                 <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Análise de Frequência: <span class="gameNameHeader"></span></h4>
@@ -367,17 +368,43 @@
                                         <input type="number" class="form-control" id="contestCountInput" value="100" min="10" max="5000">
                                     </div>
                                     <div class="col-md-6 d-grid">
-                                         <button id="runAnalysisBtn" class="btn btn-warning mt-3 mt-md-0"><i class="fas fa-cogs me-2"></i>Analisar Concursos</button>
+                                         <button id="runAnalysisBtn" class="btn btn-warning mt-3 mt-md-0"><i class="fas fa-cogs me-2"></i>Analisar Frequência</button>
                                     </div>
                                 </div>
                             </div>
                             <div id="analysisResultsContainer" class="card-body" style="display: none;">
                                 <!-- Analysis results will be injected here -->
                             </div>
-                            <div id="analysisLoadingSpinner" class="card-body text-center" style="display: none;">
-                                <div class="spinner-border text-warning" role="status"></div>
-                                <p class="mt-2">Buscando e analisando dados... Isso pode levar um momento.</p>
+                        </div>
+
+                        <!-- Range Analysis Card -->
+                        <div class="card mt-4">
+                             <div class="card-header text-white">
+                                <h4 class="mb-0"><i class="fas fa-search-plus me-2"></i>Analisar Combinações Premiadas entre Concursos</h4>
                             </div>
+                            <div class="card-body">
+                                <div class="row align-items-end">
+                                    <div class="col-md-4">
+                                        <label for="startContestInput" class="form-label">Concurso Inicial:</label>
+                                        <input type="number" class="form-control" id="startContestInput" placeholder="Ex: 2000">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="endContestInput" class="form-label">Concurso Final:</label>
+                                        <input type="number" class="form-control" id="endContestInput" placeholder="Ex: 2100">
+                                    </div>
+                                    <div class="col-md-4 d-grid">
+                                         <button id="runRangeAnalysisBtn" class="btn btn-info mt-3 mt-md-0"><i class="fas fa-cogs me-2"></i>Analisar Intervalo</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="rangeAnalysisResultsContainer" class="card-body" style="display: none;">
+                                <!-- Range analysis results will be injected here -->
+                            </div>
+                        </div>
+
+                        <div id="analysisLoadingSpinner" class="card-body text-center" style="display: none;">
+                            <div class="spinner-border text-warning" role="status"></div>
+                            <p class="mt-2">Buscando e analisando dados... Isso pode levar um momento.</p>
                         </div>
                     </div>
                 </div>
@@ -492,6 +519,8 @@
                     return localDatabase;
                 }
                 try {
+                    // Simulating a local DB file. In a real scenario, this would be a proper API call.
+                    // For this example, let's assume `db.json` is available at the root.
                     const response = await fetch('db.json');
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
@@ -512,6 +541,16 @@
                 const contestNum = parseInt(contestNumber, 10);
                 const result = db[gameMode].find(contest => contest.numero === contestNum);
                 return result || null;
+            }
+            
+            async function getContestsInRangeFromLocalDB(gameMode, start, end) {
+                const db = await fetchLocalDatabase();
+                if (!db || !db[gameMode] || db[gameMode].length === 0) {
+                    return [];
+                }
+                const startNum = parseInt(start, 10);
+                const endNum = parseInt(end, 10);
+                return db[gameMode].filter(contest => contest.numero >= startNum && contest.numero <= endNum);
             }
 
             async function getLatestContestFromLocalDB(gameMode) {
@@ -790,7 +829,7 @@
                                         <div class="suggestion-numbers">${formatSuggestion(suggestions.mixed)}</div>
                                     </div>
                                 </div>
-                             </div>`;
+                               </div>`;
                 }
 
                 container.innerHTML = html;
@@ -807,6 +846,52 @@
                         if (btn) btn.classList.add('cold-number');
                     });
                 }
+            }
+            
+            function displayRangeAnalysisResults(rankedCombinations, start, end) {
+                const container = document.getElementById('rangeAnalysisResultsContainer');
+                if (rankedCombinations.length === 0) {
+                    container.innerHTML = `<div class="alert alert-info mt-3">Nenhuma combinação premiada (prêmio principal) foi repetida no intervalo de concursos de ${start} a ${end}.</div>`;
+                    container.style.display = 'block';
+                    return;
+                }
+
+                let html = `<h4 class="mt-3">Combinações Premiadas (Prêmio Principal) entre os Concursos ${start} e ${end}</h4>`;
+                html += `
+                    <div class="d-flex justify-content-end mb-2">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-download me-1"></i> Exportar Combinações
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" id="exportRangeCsv">CSV</a></li>
+                                <li><a class="dropdown-item" href="#" id="exportRangeTxt">TXT</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead><tr><th>Combinação</th><th>Frequência</th></tr></thead>
+                            <tbody>`;
+                
+                rankedCombinations.forEach(([comboStr, freq]) => {
+                    const numbersHtml = comboStr.split(',').map(n => `<span class="badge bg-light text-dark me-1">${n}</span>`).join('');
+                    html += `<tr><td>${numbersHtml}</td><td>${freq}</td></tr>`;
+                });
+
+                html += `</tbody></table></div>`;
+                container.innerHTML = html;
+                container.style.display = 'block';
+
+                // Add event listeners for new export buttons
+                document.getElementById('exportRangeCsv').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    exportRankedCombinations('csv', rankedCombinations, start, end);
+                });
+                document.getElementById('exportRangeTxt').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    exportRankedCombinations('txt', rankedCombinations, start, end);
+                });
             }
 
             function showError(message) {
@@ -965,7 +1050,7 @@
                 exportContainer.style.width = '800px';
                 exportContainer.style.fontFamily = 'Arial, sans-serif';
                 
-                const hasCheckedResults = hitResults.length > 0;
+                const hasCheckedResults = hitResults && hitResults.length > 0;
                 let headerText = `Total de ${combinations.length} combinações`;
                 if(hasCheckedResults && drawnNumbersStr) {
                     headerText += `<br><small style="font-size: 12px; color: #666;">Conferido com: ${drawnNumbersStr}</small>`;
@@ -979,12 +1064,22 @@
                         const hitInfo = hitResults[index];
                         if (hitInfo) {
                             const tier = config.hasTrevos ? `${hitInfo.hits}+${hitInfo.trevoHits}` : hitInfo.hits;
-                            if(config.prizeTiers.includes(tier)) {
-                                const minPrize = config.prizeTiers[0];
-                                const maxPrize = config.prizeTiers[config.prizeTiers.length - 1];
-                                if (tier === maxPrize) trophyIcon = '🏆 ';
-                                else if (tier !== minPrize) trophyIcon = '🥈 ';
-                                else if (tier === minPrize) trophyIcon = '🥉 ';
+                            if (config.prizeTiers.includes(tier)) {
+                                let prizeLevel = 'medium'; // default
+                                if (config.apiName === 'maismilionaria') {
+                                    if (tier === '6+2') prizeLevel = 'max';
+                                    else if (['2+1', '2+2', '3+1'].includes(tier)) prizeLevel = 'min';
+                                } else {
+                                    const numericTiers = config.prizeTiers.filter(t => typeof t === 'number').sort((a, b) => a - b);
+                                    if (numericTiers.length > 0) {
+                                        if (tier === numericTiers[numericTiers.length - 1]) prizeLevel = 'max';
+                                        else if (tier === numericTiers[0]) prizeLevel = 'min';
+                                    }
+                                }
+
+                                if (prizeLevel === 'max') trophyIcon = '🏆 ';
+                                else if (prizeLevel === 'min') trophyIcon = '🥉 ';
+                                else trophyIcon = '🥈 ';
                             }
                         }
                     }
@@ -1173,6 +1268,8 @@
             const analysisLoadingSpinner = document.getElementById('analysisLoadingSpinner');
             const selectAllBtn = document.getElementById('selectAllBtn');
             const resetAllBtn = document.getElementById('resetAllBtn');
+            const runRangeAnalysisBtn = document.getElementById('runRangeAnalysisBtn');
+            const rangeAnalysisResultsContainer = document.getElementById('rangeAnalysisResultsContainer');
 
             // --- STATE ---
             let state = {
@@ -1195,7 +1292,7 @@
                 generateBtn.addEventListener('click', handleGenerateClick);
                 checkResultsBtn.addEventListener('click', handleCheckResults);
                 exportCsv.addEventListener('click', (e) => { e.preventDefault(); exportData('csv', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.hitResults, document.getElementById('drawnNumbersInput').value.trim()); });
-                exportTxt.addEventListener('click', (e) => { e.preventDefault(); exportData('txt', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections()); });
+                exportTxt.addEventListener('click', (e) => { e.preventDefault(); exportData('txt', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.hitResults, document.getElementById('drawnNumbersInput').value.trim()); });
                 exportPdf.addEventListener('click', (e) => { e.preventDefault(); exportData('pdf', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections()); });
                 exportPng.addEventListener('click', (e) => { e.preventDefault(); exportData('png', state.generatedCombinations, lotteryConfigs[state.currentGameMode], state.hitResults, document.getElementById('drawnNumbersInput').value.trim(), getSpecialSelections()); });
                 copyGamesBtn.addEventListener('click', () => copyCombinationsToClipboard(state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections()));
@@ -1205,6 +1302,7 @@
                 fetchLatestContestBtn.addEventListener('click', handleFetchLatestContest);
                 analyzeContestBtn.addEventListener('click', handleAnalyzeContest);
                 runAnalysisBtn.addEventListener('click', runAnalysis);
+                runRangeAnalysisBtn.addEventListener('click', runRangeAnalysis);
                 analysisResultsContainer.addEventListener('click', handleUseSuggestionClick);
                 selectAllBtn.addEventListener('click', handleSelectAll);
                 resetAllBtn.addEventListener('click', handleResetAll);
@@ -1237,6 +1335,7 @@
                 buildSpecialCheckers(config, document.getElementById('specialCheckerContainer'));
                 clearSelection();
                 analysisResultsContainer.style.display = 'none';
+                rangeAnalysisResultsContainer.style.display = 'none';
                 
                 document.querySelectorAll('.number-btn').forEach(btn => {
                     btn.classList.remove('hot-number', 'cold-number');
@@ -1531,8 +1630,8 @@
                 }
                 const drawnNumbers = drawnNumbersStr.split(/[\s,]+/).map(n => parseInt(n)).filter(n => !isNaN(n) && n > 0 && n <= config.totalNumbers);
                 
-                let expectedSize = config.isColumnar ? 7 : config.betSize;
-
+                let expectedSize = config.betSize;
+                
                 if (new Set(drawnNumbers).size !== expectedSize) {
                     showError(`Você deve inserir ${expectedSize} números únicos e válidos para a ${config.displayName}.`);
                     return;
@@ -1560,16 +1659,25 @@
                 const combinationsTable = document.getElementById('combinationsTable');
                 document.querySelectorAll('.prize-check-icon').forEach(icon => icon.innerHTML = '');
                 state.hitResults.forEach((hitInfo, index) => {
-                    let tier = config.hasTrevos ? `${hitInfo.hits}+${hitInfo.trevoHits}` : hitInfo.hits;
+                    const tier = config.hasTrevos ? `${hitInfo.hits}+${hitInfo.trevoHits}` : hitInfo.hits;
                     
                     if(config.prizeTiers.includes(tier)) {
-                        const minPrize = config.prizeTiers[0];
-                        const maxPrize = config.prizeTiers[config.prizeTiers.length - 1];
+                        let prizeLevel = 'medium';
+                         if (config.apiName === 'maismilionaria') {
+                            if (tier === '6+2') prizeLevel = 'max';
+                            else if (['2+1', '2+2', '3+1'].includes(tier)) prizeLevel = 'min';
+                        } else {
+                            const numericTiers = config.prizeTiers.filter(t => typeof t === 'number').sort((a,b) => a-b);
+                            if (numericTiers.length > 0) {
+                                if (tier === numericTiers[numericTiers.length - 1]) prizeLevel = 'max';
+                                else if (tier === numericTiers[0]) prizeLevel = 'min';
+                            }
+                        }
+                        
                         let trophyHtml = '';
-
-                        if (tier === maxPrize) trophyHtml = '<i class="fas fa-trophy text-warning" title="Acerto máximo!"></i>';
-                        else if (tier !== minPrize) trophyHtml = '<i class="fas fa-trophy text-secondary" title="Acerto intermediário"></i>';
-                        else if (tier === minPrize) trophyHtml = '<i class="fas fa-trophy text-bronze" title="Acerto mínimo"></i>';
+                        if (prizeLevel === 'max') trophyHtml = '<i class="fas fa-trophy text-warning" title="Acerto máximo!"></i>';
+                        else if (prizeLevel === 'min') trophyHtml = '<i class="fas fa-trophy text-bronze" title="Acerto mínimo"></i>';
+                        else trophyHtml = '<i class="fas fa-trophy text-secondary" title="Acerto intermediário"></i>';
                         
                         const row = combinationsTable.rows[index];
                         if(row) {
@@ -1632,7 +1740,7 @@
             }
             
             function handleResetAll() {
-                // Usando um modal customizado ou uma confirmação mais simples no futuro
+                // Using a modal customizado ou uma confirmação mais simples no futuro
                 // if (confirm('Tem certeza que deseja limpar tudo? Isso removerá todas as apostas e seleções atuais.')) {
                     localStorage.removeItem('lotteryGeneratorState');
                     clearSelection();
@@ -1671,7 +1779,7 @@
                         combo.filter(num => drawnNumbers.includes(num)).length;
                     
                     if (config.hasTrevos) {
-                        const trevoHits = state.selectedTrevos.filter(t => drawnTrevos.includes(t)).length;
+                        const trevoHits = specialSelections.trevos.filter(t => drawnTrevos.includes(t)).length;
                         const tier = `${hits}+${trevoHits}`;
                         state.hitResults.push({ hits, trevoHits });
                         if (prizeCounts.hasOwnProperty(tier)) {
@@ -1693,6 +1801,7 @@
                 analysisLoadingSpinner.style.display = 'block';
                 analysisResultsContainer.style.display = 'none';
                 analysisResultsContainer.innerHTML = '';
+                rangeAnalysisResultsContainer.style.display = 'none';
 
                 const config = lotteryConfigs[state.currentGameMode];
                 const count = parseInt(contestCountInput.value) || 100;
@@ -1733,6 +1842,77 @@
                     analysisResultsContainer.style.display = 'block';
                 }
                 analysisLoadingSpinner.style.display = 'none';
+            }
+            
+            async function runRangeAnalysis() {
+                analysisLoadingSpinner.style.display = 'block';
+                rangeAnalysisResultsContainer.style.display = 'none';
+                rangeAnalysisResultsContainer.innerHTML = '';
+                analysisResultsContainer.style.display = 'none';
+                
+                const startContest = document.getElementById('startContestInput').value;
+                const endContest = document.getElementById('endContestInput').value;
+
+                if (!startContest || !endContest || parseInt(startContest) >= parseInt(endContest)) {
+                    showError("Por favor, insira um intervalo de concursos válido.");
+                    analysisLoadingSpinner.style.display = 'none';
+                    return;
+                }
+
+                const config = lotteryConfigs[state.currentGameMode];
+                const results = await getContestsInRangeFromLocalDB(config.apiName, startContest, endContest);
+
+                if (results.length === 0) {
+                    rangeAnalysisResultsContainer.innerHTML = `<div class="alert alert-warning mt-3">Nenhum dado encontrado para o intervalo de concursos de ${startContest} a ${endContest} no banco de dados local. A busca via API externa para múltiplos concursos não é suportada no momento.</div>`;
+                } else {
+                    const comboMap = new Map();
+                    results.forEach(contest => {
+                        if (contest.listaDezenas && contest.listaDezenas.length > 0) {
+                            const comboKey = contest.listaDezenas.map(n => parseInt(n)).sort((a, b) => a - b).join(',');
+                            comboMap.set(comboKey, (comboMap.get(comboKey) || 0) + 1);
+                        }
+                    });
+                    
+                    const rankedCombinations = Array.from(comboMap.entries())
+                        .filter(([key, value]) => value > 1) // Opcional: mostrar apenas combinações repetidas
+                        .sort((a, b) => b[1] - a[1]);
+                    
+                    displayRangeAnalysisResults(rankedCombinations, startContest, endContest);
+                }
+
+                analysisLoadingSpinner.style.display = 'none';
+            }
+            
+            function exportRankedCombinations(format, rankedCombinations, start, end) {
+                const config = lotteryConfigs[state.currentGameMode];
+                const fileName = `${config.displayName}_premiadas_${start}_a_${end}`;
+                let content = '';
+                let mimeType = '';
+
+                if (format === 'csv') {
+                    content = 'Combinacao,Frequencia\n';
+                    rankedCombinations.forEach(([combo, freq]) => {
+                        content += `"${combo}",${freq}\n`;
+                    });
+                    mimeType = 'text/csv';
+                } else { // txt
+                    content = `Combinações Premiadas (Prêmio Principal) - ${config.displayName}\n`;
+                    content += `Intervalo: Concursos ${start} a ${end}\n\n`;
+                    rankedCombinations.forEach(([combo, freq]) => {
+                        content += `Frequência ${freq}: ${combo.replace(/,/g, ' ')}\n`;
+                    });
+                    mimeType = 'text/plain';
+                }
+
+                const blob = new Blob([content], { type: `${mimeType};charset=utf-8;` });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${fileName}.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
             }
 
             function calculateFrequency(numbers) {
