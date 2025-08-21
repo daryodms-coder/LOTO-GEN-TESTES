@@ -240,7 +240,6 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="analysis-tab" data-bs-toggle="tab" data-bs-target="#analysis-tab-pane" type="button" role="tab"><i class="fas fa-chart-bar me-1"></i> Análise</button>
             </li>
-            <!-- NOVA ABA ADICIONADA -->
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming-tab-pane" type="button" role="tab"><i class="fas fa-calendar-alt me-1"></i> Próximos Concursos</button>
             </li>
@@ -388,7 +387,7 @@
                 </div>
             </div>
 
-            <!-- NOVO PAINEL ADICIONADO -->
+            <!-- Upcoming Contests Pane -->
             <div class="tab-pane fade" id="upcoming-tab-pane" role="tabpanel">
                 <div class="row mt-3">
                     <div class="col-lg-8 mx-auto">
@@ -968,7 +967,7 @@
                 document.body.removeChild(textArea);
             }
 
-            function exportData(format, combinations, config, specialSelections, hitResults, drawnNumbersStr, drawnTrevosStr = '') {
+            function exportData(format, combinations, config, specialSelections, hitResults, drawnNumbersStr, drawnTrevosStr) {
                 if (combinations.length === 0) {
                     showError('Não há combinações para exportar.');
                     return;
@@ -1094,6 +1093,7 @@
                 const headerH = 10;
                 const gridPadding = 2;
                 const cellMargin = 0.5;
+                const footerH = 5; // Espaço para texto de seleções especiais
                 let gridH;
 
                 if (config.isColumnar) {
@@ -1107,7 +1107,7 @@
                     const cellH = cellW;
                     gridH = numRowsInGrid * (cellH + cellMargin);
                 }
-                const cardH = headerH + gridH + (gridPadding * 2) + 4;
+                const cardH = headerH + gridH + (gridPadding * 2) + footerH;
 
                 const cardsPerCol = Math.floor((pageH - (margin * 2) + cardGap) / (cardH + cardGap));
                 const cardsPerPage = cardsPerRow * cardsPerCol;
@@ -1126,12 +1126,12 @@
                     const row = Math.floor(indexOnPage / cardsPerRow);
                     const x = margin + col * (cardW + cardGap);
                     const y = margin + row * (cardH + cardGap);
-                    drawBetCard(doc, combo, index + 1, x, y, cardW, cardH, config);
+                    drawBetCard(doc, combo, index + 1, x, y, cardW, cardH, config, specialSelections);
                 });
                 doc.save(`${fileName}.pdf`);
             }
 
-            function drawBetCard(doc, combo, betNumber, x, y, w, h, config) {
+            function drawBetCard(doc, combo, betNumber, x, y, w, h, config, specialSelections) {
                 const headerH = 10;
                 const padding = 2;
 
@@ -1207,6 +1207,28 @@
                         }
                     }
                 }
+                
+                // Adiciona informações especiais no rodapé do volante
+                let specialY = y + h - padding - 1;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.setTextColor(80, 80, 80);
+
+                let specialText = '';
+                if (config.hasTeam && specialSelections.team) {
+                    specialText += `Time: ${specialSelections.team}`;
+                }
+                if (config.hasMonth && specialSelections.month) {
+                    specialText += `${specialText ? ' | ' : ''}Mês: ${specialSelections.month}`;
+                }
+                if (config.hasTrevos && specialSelections.trevos.length > 0) {
+                    specialText += `${specialText ? ' | ' : ''}Trevos: ${specialSelections.trevos.join(', ')}`;
+                }
+
+                if (specialText) {
+                    doc.text(specialText, x + padding + 2, specialY);
+                }
+
                 doc.setTextColor(0, 0, 0);
             }
 
@@ -1243,7 +1265,7 @@
             const resetAllBtn = document.getElementById('resetAllBtn');
             const analyzeRangeBtn = document.getElementById('analyzeRangeBtn');
             const rangeHistoryAnalysisResult = document.getElementById('rangeHistoryAnalysisResult');
-            const upcomingTab = document.getElementById('upcoming-tab'); // NOVO SELETOR
+            const upcomingTab = document.getElementById('upcoming-tab');
 
 
             // --- STATE ---
@@ -1267,14 +1289,26 @@
                 clearBtn.addEventListener('click', clearSelection);
                 generateBtn.addEventListener('click', handleGenerateClick);
                 checkResultsBtn.addEventListener('click', handleCheckResults);
-                exportCsv.addEventListener('click', (e) => { e.preventDefault(); exportData('csv', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.hitResults, document.getElementById('drawnNumbersInput').value.trim()); });
-                exportTxt.addEventListener('click', (e) => { e.preventDefault(); exportData('txt', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections()); });
-                exportPdf.addEventListener('click', (e) => { e.preventDefault(); exportData('pdf', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections()); });
+                
+                // CORREÇÃO: Argumentos passados corretamente para as funções de exportação
+                exportCsv.addEventListener('click', (e) => { 
+                    e.preventDefault(); 
+                    exportData('csv', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.hitResults, document.getElementById('drawnNumbersInput').value.trim()); 
+                });
+                exportTxt.addEventListener('click', (e) => { 
+                    e.preventDefault(); 
+                    exportData('txt', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections()); 
+                });
+                exportPdf.addEventListener('click', (e) => { 
+                    e.preventDefault(); 
+                    exportData('pdf', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections()); 
+                });
                 exportPng.addEventListener('click', (e) => { 
                     e.preventDefault(); 
                     const drawnTrevosStr = document.getElementById('drawnTrevosInput')?.value.trim() || '';
-                    exportData('png', state.generatedCombinations, lotteryConfigs[state.currentGameMode], state.hitResults, document.getElementById('drawnNumbersInput').value.trim(), getSpecialSelections(), drawnTrevosStr); 
+                    exportData('png', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.hitResults, document.getElementById('drawnNumbersInput').value.trim(), drawnTrevosStr); 
                 });
+
                 copyGamesBtn.addEventListener('click', () => copyCombinationsToClipboard(state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections()));
                 generationModeRadios.forEach(radio => radio.addEventListener('change', (e) => {
                     fixedNumbersInfo.classList.toggle('d-none', e.target.value !== 'fixo');
@@ -1287,7 +1321,6 @@
                 selectAllBtn.addEventListener('click', handleSelectAll);
                 resetAllBtn.addEventListener('click', handleResetAll);
 
-                // NOVO EVENT LISTENER PARA A NOVA ABA
                 let upcomingDataLoaded = false;
                 upcomingTab.addEventListener('show.bs.tab', function (event) {
                     if (!upcomingDataLoaded) {
