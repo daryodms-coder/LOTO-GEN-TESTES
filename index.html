@@ -240,6 +240,10 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="analysis-tab" data-bs-toggle="tab" data-bs-target="#analysis-tab-pane" type="button" role="tab"><i class="fas fa-chart-bar me-1"></i> Análise</button>
             </li>
+            <!-- NOVA ABA ADICIONADA -->
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming-tab-pane" type="button" role="tab"><i class="fas fa-calendar-alt me-1"></i> Próximos Concursos</button>
+            </li>
         </ul>
 
         <div class="tab-content" id="mainTabContent">
@@ -368,7 +372,7 @@
                                         <input type="number" class="form-control" id="contestCountInput" value="100" min="10" max="5000">
                                     </div>
                                     <div class="col-md-6 d-grid">
-                                         <button id="runAnalysisBtn" class="btn btn-warning mt-3 mt-md-0"><i class="fas fa-cogs me-2"></i>Analisar Concursos</button>
+                                        <button id="runAnalysisBtn" class="btn btn-warning mt-3 mt-md-0"><i class="fas fa-cogs me-2"></i>Analisar Concursos</button>
                                     </div>
                                 </div>
                             </div>
@@ -383,6 +387,29 @@
                     </div>
                 </div>
             </div>
+
+            <!-- NOVO PAINEL ADICIONADO -->
+            <div class="tab-pane fade" id="upcoming-tab-pane" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-lg-8 mx-auto">
+                        <div class="card">
+                            <div class="card-header text-white">
+                                <h4 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Informações dos Próximos Concursos</h4>
+                            </div>
+                            <div class="card-body" id="upcomingContestsContainer">
+                                <!-- Conteúdo dos próximos concursos será carregado aqui via JS -->
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Carregando...</span>
+                                    </div>
+                                    <p class="mt-2">Carregando informações...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- Global Loading Spinner & Error Alert -->
@@ -567,7 +594,7 @@
                     return [];
                 }
                 return db[gameMode].filter(contest => contest.numero >= start && contest.numero <= end)
-                                    .sort((a, b) => a.numero - b.numero);
+                                        .sort((a, b) => a.numero - b.numero);
             }
 
             async function fetchApiData(url) {
@@ -828,7 +855,7 @@
                                         <div class="suggestion-numbers">${formatSuggestion(suggestions.mixed)}</div>
                                     </div>
                                 </div>
-                             </div>`;
+                               </div>`;
                 }
 
                 container.innerHTML = html;
@@ -1216,6 +1243,7 @@
             const resetAllBtn = document.getElementById('resetAllBtn');
             const analyzeRangeBtn = document.getElementById('analyzeRangeBtn');
             const rangeHistoryAnalysisResult = document.getElementById('rangeHistoryAnalysisResult');
+            const upcomingTab = document.getElementById('upcoming-tab'); // NOVO SELETOR
 
 
             // --- STATE ---
@@ -1258,6 +1286,15 @@
                 analysisResultsContainer.addEventListener('click', handleUseSuggestionClick);
                 selectAllBtn.addEventListener('click', handleSelectAll);
                 resetAllBtn.addEventListener('click', handleResetAll);
+
+                // NOVO EVENT LISTENER PARA A NOVA ABA
+                let upcomingDataLoaded = false;
+                upcomingTab.addEventListener('show.bs.tab', function (event) {
+                    if (!upcomingDataLoaded) {
+                        fetchUpcomingContests();
+                        upcomingDataLoaded = true;
+                    }
+                });
 
                 updateUIForGameMode(state.currentGameMode);
                 restoreState();
@@ -2053,6 +2090,64 @@
                 a.click();
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
+            }
+            
+            // NOVA FUNÇÃO PARA BUSCAR DADOS DOS PRÓXIMOS CONCURSOS
+            async function fetchUpcomingContests() {
+                const container = document.getElementById('upcomingContestsContainer');
+                container.innerHTML = `
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="mt-2">Carregando informações...</p>
+                    </div>`;
+
+                try {
+                    const response = await fetch('loterias.json');
+                    if (!response.ok) {
+                        throw new Error('Não foi possível carregar o arquivo loterias.json');
+                    }
+                    const data = await response.json();
+
+                    let html = '<div class="row g-3">';
+
+                    for (const gameKey in lotteryConfigs) {
+                        const config = lotteryConfigs[gameKey];
+                        const contestData = data[config.apiName];
+
+                        if (contestData && contestData.dataProximoConcurso && contestData.valorEstimadoProximoConcurso > 0) {
+                            const [year, month, day] = contestData.dataProximoConcurso.split('T')[0].split('-');
+                            const formattedDate = `${day}/${month}/${year}`;
+                            const formattedValue = contestData.valorEstimadoProximoConcurso.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                            html += `
+                                <div class="col-md-6">
+                                    <div class="card h-100" style="border-left: 4px solid ${config.color};">
+                                        <div class="card-body">
+                                            <h5 class="card-title" style="color: ${config.color};">${config.displayName}</h5>
+                                            <p class="card-text mb-1">
+                                                <i class="fas fa-calendar-day me-2"></i>
+                                                <strong>Próximo Sorteio:</strong> ${formattedDate}
+                                            </p>
+                                            <p class="card-text mb-0">
+                                                <i class="fas fa-dollar-sign me-2"></i>
+                                                <strong>Prêmio Estimado:</strong> ${formattedValue}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    html += '</div>';
+                    container.innerHTML = html;
+
+                } catch (error) {
+                    console.error('Erro ao buscar próximos concursos:', error);
+                    container.innerHTML = `<div class="alert alert-danger">Não foi possível carregar as informações dos próximos concursos. Verifique se o arquivo <strong>loterias.json</strong> está no mesmo diretório do seu projeto.</div>`;
+                }
             }
 
             initializeApp();
