@@ -322,8 +322,9 @@
                                         <tbody id="combinationsTable"></tbody>
                                     </table>
                                 </div>
-                                <div id="checkHistoryBtnContainer" class="d-grid gap-2 mt-3 d-none">
-                                    <button id="checkHistoryBtn" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#historyModal"><i class="fas fa-history me-2"></i> Analisar Desempenho em Concurso</button>
+                                <div id="checkHistoryBtnContainer" class="d-flex flex-wrap gap-2 mt-3 d-none">
+                                    <button id="checkHistoryBtn" class="btn btn-outline-warning flex-grow-1" data-bs-toggle="modal" data-bs-target="#historyModal"><i class="fas fa-history me-2"></i> Analisar por Concurso</button>
+                                    <button id="checkRangeHistoryBtn" class="btn btn-outline-info flex-grow-1" data-bs-toggle="modal" data-bs-target="#rangeHistoryModal"><i class="fas fa-search-plus me-2"></i> Analisar entre Concursos</button>
                                 </div>
                             </div>
                             <div id="resultCheckerSection" class="card-footer d-none">
@@ -356,7 +357,6 @@
             <div class="tab-pane fade" id="analysis-tab-pane" role="tabpanel">
                  <div class="row mt-3">
                     <div class="col-lg-8 mx-auto">
-                        <!-- Frequency Analysis Card -->
                         <div class="card">
                              <div class="card-header text-white">
                                 <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Análise de Frequência: <span class="gameNameHeader"></span></h4>
@@ -368,44 +368,17 @@
                                         <input type="number" class="form-control" id="contestCountInput" value="100" min="10" max="5000">
                                     </div>
                                     <div class="col-md-6 d-grid">
-                                         <button id="runAnalysisBtn" class="btn btn-warning mt-3 mt-md-0"><i class="fas fa-cogs me-2"></i>Analisar Frequência</button>
+                                         <button id="runAnalysisBtn" class="btn btn-warning mt-3 mt-md-0"><i class="fas fa-cogs me-2"></i>Analisar Concursos</button>
                                     </div>
                                 </div>
                             </div>
                             <div id="analysisResultsContainer" class="card-body" style="display: none;">
                                 <!-- Analysis results will be injected here -->
                             </div>
-                        </div>
-
-                        <!-- Range Analysis Card -->
-                        <div class="card mt-4">
-                             <div class="card-header text-white">
-                                <h4 class="mb-0"><i class="fas fa-search-plus me-2"></i>Analisar Desempenho das Apostas Geradas</h4>
+                            <div id="analysisLoadingSpinner" class="card-body text-center" style="display: none;">
+                                <div class="spinner-border text-warning" role="status"></div>
+                                <p class="mt-2">Buscando e analisando dados... Isso pode levar um momento.</p>
                             </div>
-                            <div class="card-body">
-                                <p>Analise o desempenho das suas apostas geradas em um intervalo de concursos passados.</p>
-                                <div class="row align-items-end">
-                                    <div class="col-md-4">
-                                        <label for="startContestInput" class="form-label">Concurso Inicial:</label>
-                                        <input type="number" class="form-control" id="startContestInput" placeholder="Ex: 2000">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="endContestInput" class="form-label">Concurso Final:</label>
-                                        <input type="number" class="form-control" id="endContestInput" placeholder="Ex: 2100">
-                                    </div>
-                                    <div class="col-md-4 d-grid">
-                                         <button id="runRangeAnalysisBtn" class="btn btn-info mt-3 mt-md-0"><i class="fas fa-play-circle me-2"></i>Analisar Desempenho no Intervalo</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="rangeAnalysisResultsContainer" class="card-body" style="display: none;">
-                                <!-- Range analysis results will be injected here -->
-                            </div>
-                        </div>
-
-                        <div id="analysisLoadingSpinner" class="card-body text-center" style="display: none;">
-                            <div class="spinner-border text-warning" role="status"></div>
-                            <p class="mt-2">Buscando e analisando dados... Isso pode levar um momento.</p>
                         </div>
                     </div>
                 </div>
@@ -434,7 +407,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-history me-2"></i>Analisador de Desempenho Histórico</h5>
+                    <h5 class="modal-title"><i class="fas fa-history me-2"></i>Análise por Concurso</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -451,6 +424,34 @@
                         </button>
                     </div>
                     <div id="historyAnalysisResult" class="mt-4 d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="rangeHistoryModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-search-plus me-2"></i>Análise entre Concursos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Digite o intervalo de concursos (inicial e final) para verificar o desempenho das suas apostas.</p>
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-5">
+                            <input type="number" id="startContestInput" class="form-control" placeholder="Concurso Inicial">
+                        </div>
+                        <div class="col-md-5">
+                            <input type="number" id="endContestInput" class="form-control" placeholder="Concurso Final">
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button class="btn btn-info" type="button" id="analyzeRangeBtn">
+                                <i class="fas fa-play me-1"></i> Analisar
+                            </button>
+                        </div>
+                    </div>
+                    <div id="rangeHistoryAnalysisResult" class="mt-4 d-none"></div>
                 </div>
             </div>
         </div>
@@ -481,31 +482,31 @@
             // --- CONFIGS ---
             const lotteryConfigs = {
                 lotofacil: {
-                    displayName: "Lotofácil", apiName: "lotofacil", fallbackSlug: 'lotofacil', totalNumbers: 25, betSize: 15, minSelection: 15, maxSelection: 20, cost: 3.00, color: '#930089', hoverColor: '#7a0070', pdfGridCols: 5, prizeTiers: [11, 12, 13, 14, 15], prizeValues: { 11: 6.00, 12: 12.00, 13: 30.00, 14: 1500.00, 15: 1700000.00 }
+                    displayName: "Lotofácil", apiName: "lotofacil", fallbackSlug: 'lotofacil', totalNumbers: 25, betSize: 15, minSelection: 15, maxSelection: 20, cost: 3.00, color: '#930089', hoverColor: '#7a0070', pdfGridCols: 5, prizeTiers: [15, 14, 13, 12, 11], prizeValues: { 11: 6.00, 12: 12.00, 13: 30.00, 14: 1500.00, 15: 1700000.00 }
                 },
                 megasena: {
-                    displayName: "Mega-Sena", apiName: "megasena", fallbackSlug: 'mega-sena', totalNumbers: 60, betSize: 6, minSelection: 6, maxSelection: 20, cost: 5.00, color: '#209869', hoverColor: '#197c56', pdfGridCols: 10, prizeTiers: [4, 5, 6], prizeValues: { 4: 900.00, 5: 45000.00, 6: 30000000.00 }
+                    displayName: "Mega-Sena", apiName: "megasena", fallbackSlug: 'mega-sena', totalNumbers: 60, betSize: 6, minSelection: 6, maxSelection: 20, cost: 5.00, color: '#209869', hoverColor: '#197c56', pdfGridCols: 10, prizeTiers: [6, 5, 4], prizeValues: { 4: 900.00, 5: 45000.00, 6: 30000000.00 }
                 },
                 maismilionaria: {
                     displayName: "Mais Milionária", apiName: "maismilionaria", fallbackSlug: 'mais-milionaria', totalNumbers: 50, betSize: 6, minSelection: 6, maxSelection: 12, cost: 6.00, color: '#007bff', hoverColor: '#0056b3', pdfGridCols: 10, hasTrevos: true, trevoSize: 2, prizeTiers: ['6+2', '6+1', '5+2', '5+1', '4+2', '4+1', '3+2', '3+1', '2+2', '2+1'], prizeValues: { '6+2': 10000000, '6+1': 500000, '5+2': 50000, '5+1': 1000, '4+2': 1000, '4+1': 100, '3+2': 50, '3+1': 24, '2+2': 12, '2+1': 6 }
                 },
                 quina: {
-                    displayName: "Quina", apiName: "quina", fallbackSlug: 'quina', totalNumbers: 80, betSize: 5, minSelection: 5, maxSelection: 15, cost: 2.50, color: '#260085', hoverColor: '#1e006a', pdfGridCols: 10, prizeTiers: [2, 3, 4, 5], prizeValues: { 2: 4.00, 3: 150.00, 4: 7000.00, 5: 1500000.00 }
+                    displayName: "Quina", apiName: "quina", fallbackSlug: 'quina', totalNumbers: 80, betSize: 5, minSelection: 5, maxSelection: 15, cost: 2.50, color: '#260085', hoverColor: '#1e006a', pdfGridCols: 10, prizeTiers: [5, 4, 3, 2], prizeValues: { 2: 4.00, 3: 150.00, 4: 7000.00, 5: 1500000.00 }
                 },
                 lotomania: {
-                    displayName: "Lotomania", apiName: "lotomania", fallbackSlug: 'lotomania', totalNumbers: 100, betSize: 50, minSelection: 50, maxSelection: 50, cost: 3.00, color: '#f78100', hoverColor: '#c46600', pdfGridCols: 10, prizeTiers: [15, 16, 17, 18, 19, 20, 0], prizeValues: { 15: 10.00, 16: 50.00, 17: 200.00, 18: 1500.00, 19: 50000.00, 20: 1000000.00, 0: 100000.00 }
+                    displayName: "Lotomania", apiName: "lotomania", fallbackSlug: 'lotomania', totalNumbers: 100, betSize: 50, minSelection: 50, maxSelection: 50, cost: 3.00, color: '#f78100', hoverColor: '#c46600', pdfGridCols: 10, prizeTiers: [20, 19, 18, 17, 16, 15, 0], prizeValues: { 15: 10.00, 16: 50.00, 17: 200.00, 18: 1500.00, 19: 50000.00, 20: 1000000.00, 0: 100000.00 }
                 },
                 timemania: {
-                    displayName: "Timemania", apiName: "timemania", fallbackSlug: 'timemania', totalNumbers: 80, betSize: 10, minSelection: 10, maxSelection: 10, cost: 3.50, color: '#008000', hoverColor: '#005300', pdfGridCols: 10, hasTeam: true, prizeTiers: [3, 4, 5, 6, 7], prizeValues: { 3: 5.00, 4: 10.00, 5: 25.00, 6: 1000.00, 7: 25000.00, "team": 8.50 }
+                    displayName: "Timemania", apiName: "timemania", fallbackSlug: 'timemania', totalNumbers: 80, betSize: 10, minSelection: 10, maxSelection: 10, cost: 3.50, color: '#008000', hoverColor: '#005300', pdfGridCols: 10, hasTeam: true, prizeTiers: [7, 6, 5, 4, 3], prizeValues: { 3: 5.00, 4: 10.00, 5: 25.00, 6: 1000.00, 7: 25000.00, "team": 8.50 }
                 },
                 duplasena: {
-                    displayName: "Dupla Sena", apiName: "duplasena", fallbackSlug: 'dupla-sena', totalNumbers: 50, betSize: 6, minSelection: 6, maxSelection: 15, cost: 2.50, color: '#a50000', hoverColor: '#7d0000', pdfGridCols: 10, prizeTiers: [3, 4, 5, 6], prizeValues: { 3: 2.50, 4: 100.00, 5: 4000.00, 6: 200000.00 }
+                    displayName: "Dupla Sena", apiName: "duplasena", fallbackSlug: 'dupla-sena', totalNumbers: 50, betSize: 6, minSelection: 6, maxSelection: 15, cost: 2.50, color: '#a50000', hoverColor: '#7d0000', pdfGridCols: 10, prizeTiers: [6, 5, 4, 3], prizeValues: { 3: 2.50, 4: 100.00, 5: 4000.00, 6: 200000.00 }
                 },
                 diadesorte: {
-                    displayName: "Dia de Sorte", apiName: "diadesorte", fallbackSlug: 'dia-de-sorte', totalNumbers: 31, betSize: 7, minSelection: 7, maxSelection: 15, cost: 2.50, color: '#f8a700', hoverColor: '#c58400', pdfGridCols: 7, hasMonth: true, prizeTiers: [4, 5, 6, 7], prizeValues: { 4: 5.00, 5: 25.00, 6: 2000.00, 7: 300000.00, "month": 2.50 }
+                    displayName: "Dia de Sorte", apiName: "diadesorte", fallbackSlug: 'dia-de-sorte', totalNumbers: 31, betSize: 7, minSelection: 7, maxSelection: 15, cost: 2.50, color: '#f8a700', hoverColor: '#c58400', pdfGridCols: 7, hasMonth: true, prizeTiers: [7, 6, 5, 4], prizeValues: { 4: 5.00, 5: 25.00, 6: 2000.00, 7: 300000.00, "month": 2.50 }
                 },
                 supersete: {
-                    displayName: "Super Sete", apiName: "supersete", fallbackSlug: 'super-sete', totalNumbers: 10, betSize: 7, minSelection: 7, maxSelection: 21, cost: 2.50, color: '#8a2be2', hoverColor: '#6921b2', isColumnar: true, prizeTiers: [3, 4, 5, 6, 7], prizeValues: { 3: 5.00, 4: 50.00, 5: 1000.00, 6: 15000.00, 7: 500000.00 }
+                    displayName: "Super Sete", apiName: "supersete", fallbackSlug: 'super-sete', totalNumbers: 10, betSize: 7, minSelection: 7, maxSelection: 21, cost: 2.50, color: '#8a2be2', hoverColor: '#6921b2', isColumnar: true, prizeTiers: [7, 6, 5, 4, 3], prizeValues: { 3: 5.00, 4: 50.00, 5: 1000.00, 6: 15000.00, 7: 500000.00 }
                 }
             };
             const TEAMS = ["ABC/RN", "Altos/PI", "América/MG", "América/RN", "Aparecidense/GO", "Athletico/PR", "Atlético/AC", "Atlético/CE", "Atlético/GO", "Atlético/MG", "Avaí/SC", "Bahia/BA", "Boavista/RJ", "Botafogo/PB", "Botafogo/RJ", "Botafogo/SP", "Bragantino/SP", "Brasil de Pelotas/RS", "Brasiliense/DF", "Brusque/SC", "Campinense/PB", "Caxias/RS", "Ceará/CE", "Chapecoense/SC", "Cianorte/PR", "Confiança/SE", "Corinthians/SP", "Coritiba/PR", "CRB/AL", "Criciúma/SC", "Cruzeiro/MG", "CSA/AL", "Cuiabá/MT", "Ferroviária/SP", "Ferroviário/CE", "Figueirense/SC", "Flamengo/RJ", "Floresta/CE", "Fluminense/RJ", "Fortaleza/CE", "Goiás/GO", "Grêmio/RS", "Guarani/SP", "Imperatriz/MA", "Internacional/RS", "Ituano/SP", "Jacuipense/BA", "Joinville/SC", "Juazeirense/BA", "Juventude/RS", "Londrina/PR", "Luverdense/MT", "Manaus/AM", "Mirassol/SP", "Moto Club/MA", "Náutico/PE", "Novorizontino/SP", "Oeste/SP", "Operário/PR", "Palmeiras/SP", "Paraná/PR", "Paysandu/PA", "Ponte Preta/SP", "Portuguesa/SP", "Remo/PA", "Sampaio Corrêa/MA", "Santa Cruz/PE", "Santo André/SP", "Santos/SP", "São Bento/SP", "São José/RS", "São Paulo/SP", "São Raimundo/RR", "Sport/PE", "Tombense/MG", "Treze/PB", "Vasco/RJ", "Vila Nova/GO", "Vitória/BA", "Volta Redonda/RJ", "Ypiranga/RS"];
@@ -541,16 +542,6 @@
                 const result = db[gameMode].find(contest => contest.numero === contestNum);
                 return result || null;
             }
-            
-            async function getContestsInRangeFromLocalDB(gameMode, start, end) {
-                const db = await fetchLocalDatabase();
-                if (!db || !db[gameMode] || db[gameMode].length === 0) {
-                    return [];
-                }
-                const startNum = parseInt(start, 10);
-                const endNum = parseInt(end, 10);
-                return db[gameMode].filter(contest => contest.numero >= startNum && contest.numero <= endNum);
-            }
 
             async function getLatestContestFromLocalDB(gameMode) {
                 const db = await fetchLocalDatabase();
@@ -568,6 +559,15 @@
                 return db[gameMode]
                     .sort((a, b) => b.numero - a.numero)
                     .slice(0, count);
+            }
+            
+            async function getContestsForAnalysisFromLocalDBByRange(gameMode, start, end) {
+                const db = await fetchLocalDatabase();
+                if (!db || !db[gameMode] || db[gameMode].length === 0) {
+                    return [];
+                }
+                return db[gameMode].filter(contest => contest.numero >= start && contest.numero <= end)
+                                    .sort((a, b) => a.numero - b.numero);
             }
 
             async function fetchApiData(url) {
@@ -828,7 +828,7 @@
                                         <div class="suggestion-numbers">${formatSuggestion(suggestions.mixed)}</div>
                                     </div>
                                 </div>
-                               </div>`;
+                             </div>`;
                 }
 
                 container.innerHTML = html;
@@ -846,7 +846,7 @@
                     });
                 }
             }
-            
+
             function showError(message) {
                 document.getElementById('errorMessage').textContent = message;
                 document.getElementById('errorAlert').classList.remove('d-none');
@@ -941,7 +941,7 @@
                 document.body.removeChild(textArea);
             }
 
-            function exportData(format, combinations, config, specialSelections, hitResults, drawnNumbersStr) {
+            function exportData(format, combinations, config, specialSelections, hitResults, drawnNumbersStr, drawnTrevosStr = '') {
                 if (combinations.length === 0) {
                     showError('Não há combinações para exportar.');
                     return;
@@ -950,7 +950,7 @@
                 if (format === 'pdf') {
                     exportToStyledPdf(fileName, config, combinations, specialSelections);
                 } else if (format === 'png') {
-                    exportToPng(fileName, config, combinations, hitResults, drawnNumbersStr, specialSelections);
+                    exportToPng(fileName, config, combinations, hitResults, drawnNumbersStr, specialSelections, drawnTrevosStr);
                 } else {
                     let content = '';
                     let mimeType = '';
@@ -993,7 +993,7 @@
                 }
             }
 
-            function exportToPng(fileName, config, combinations, hitResults, drawnNumbersStr, specialSelections) {
+            function exportToPng(fileName, config, combinations, hitResults, drawnNumbersStr, specialSelections, drawnTrevosStr) {
                 const exportContainer = document.createElement('div');
                 exportContainer.id = 'png-export-container';
                 exportContainer.style.position = 'absolute';
@@ -1006,7 +1006,11 @@
                 const hasCheckedResults = hitResults && hitResults.length > 0;
                 let headerText = `Total de ${combinations.length} combinações`;
                 if(hasCheckedResults && drawnNumbersStr) {
-                    headerText += `<br><small style="font-size: 12px; color: #666;">Conferido com: ${drawnNumbersStr}</small>`;
+                    let fullDrawnStr = drawnNumbersStr;
+                    if (config.hasTrevos && drawnTrevosStr) {
+                        fullDrawnStr += ` | Trevos: ${drawnTrevosStr}`;
+                    }
+                    headerText += `<br><small style="font-size: 12px; color: #666;">Conferido com: ${fullDrawnStr}</small>`;
                 }
 
                 let content = `<div style="text-align: center; border-bottom: 2px solid ${config.color}; padding-bottom: 10px; margin-bottom: 15px;"><h1 style="color: ${config.color}; margin: 0;">Apostas - ${config.displayName}</h1><p style="margin: 0; color: #555;">${headerText}</p></div><div style="column-count: 3; column-gap: 20px;">`;
@@ -1017,22 +1021,11 @@
                         const hitInfo = hitResults[index];
                         if (hitInfo) {
                             const tier = config.hasTrevos ? `${hitInfo.hits}+${hitInfo.trevoHits}` : hitInfo.hits;
-                            if (config.prizeTiers.includes(tier)) {
-                                let prizeLevel = 'medium'; // default
-                                if (config.apiName === 'maismilionaria') {
-                                    if (tier === '6+2') prizeLevel = 'max';
-                                    else if (['2+1', '2+2', '3+1'].includes(tier)) prizeLevel = 'min';
-                                } else {
-                                    const numericTiers = config.prizeTiers.filter(t => typeof t === 'number').sort((a, b) => a - b);
-                                    if (numericTiers.length > 0) {
-                                        if (tier === numericTiers[numericTiers.length - 1]) prizeLevel = 'max';
-                                        else if (tier === numericTiers[0]) prizeLevel = 'min';
-                                    }
-                                }
-
-                                if (prizeLevel === 'max') trophyIcon = '🏆 ';
-                                else if (prizeLevel === 'min') trophyIcon = '🥉 ';
-                                else trophyIcon = '🥈 ';
+                            const tierIndex = config.prizeTiers.indexOf(tier);
+                            if(tierIndex !== -1) {
+                                if (tierIndex === 0) trophyIcon = '🏆 '; // Maior prêmio
+                                else if (tierIndex < config.prizeTiers.length - 1) trophyIcon = '🥈 '; // Intermediário
+                                else trophyIcon = '🥉 '; // Menor prêmio
                             }
                         }
                     }
@@ -1191,6 +1184,7 @@
             }
 
             // --- MAIN LOGIC ---
+            // --- DOM ELEMENTS ---
             const gameModeSelect = document.getElementById('gameModeSelect');
             const numberGridContainer = document.getElementById('numberGridContainer');
             const superSeteGridContainer = document.getElementById('superSeteGridContainer');
@@ -1220,8 +1214,9 @@
             const analysisLoadingSpinner = document.getElementById('analysisLoadingSpinner');
             const selectAllBtn = document.getElementById('selectAllBtn');
             const resetAllBtn = document.getElementById('resetAllBtn');
-            const runRangeAnalysisBtn = document.getElementById('runRangeAnalysisBtn');
-            const rangeAnalysisResultsContainer = document.getElementById('rangeAnalysisResultsContainer');
+            const analyzeRangeBtn = document.getElementById('analyzeRangeBtn');
+            const rangeHistoryAnalysisResult = document.getElementById('rangeHistoryAnalysisResult');
+
 
             // --- STATE ---
             let state = {
@@ -1233,6 +1228,7 @@
                 currentGameMode: 'lotofacil',
                 totalCostValue: 0,
                 hitResults: [],
+                winningCombinationsInRange: [], // New state for range analysis
                 selectedTeam: null,
                 selectedMonth: null,
             };
@@ -1244,17 +1240,21 @@
                 generateBtn.addEventListener('click', handleGenerateClick);
                 checkResultsBtn.addEventListener('click', handleCheckResults);
                 exportCsv.addEventListener('click', (e) => { e.preventDefault(); exportData('csv', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.hitResults, document.getElementById('drawnNumbersInput').value.trim()); });
-                exportTxt.addEventListener('click', (e) => { e.preventDefault(); exportData('txt', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.hitResults, document.getElementById('drawnNumbersInput').value.trim()); });
+                exportTxt.addEventListener('click', (e) => { e.preventDefault(); exportData('txt', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections()); });
                 exportPdf.addEventListener('click', (e) => { e.preventDefault(); exportData('pdf', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections()); });
-                exportPng.addEventListener('click', (e) => { e.preventDefault(); exportData('png', state.generatedCombinations, lotteryConfigs[state.currentGameMode], state.hitResults, document.getElementById('drawnNumbersInput').value.trim(), getSpecialSelections()); });
+                exportPng.addEventListener('click', (e) => { 
+                    e.preventDefault(); 
+                    const drawnTrevosStr = document.getElementById('drawnTrevosInput')?.value.trim() || '';
+                    exportData('png', state.generatedCombinations, lotteryConfigs[state.currentGameMode], state.hitResults, document.getElementById('drawnNumbersInput').value.trim(), getSpecialSelections(), drawnTrevosStr); 
+                });
                 copyGamesBtn.addEventListener('click', () => copyCombinationsToClipboard(state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections()));
                 generationModeRadios.forEach(radio => radio.addEventListener('change', (e) => {
                     fixedNumbersInfo.classList.toggle('d-none', e.target.value !== 'fixo');
                 }));
                 fetchLatestContestBtn.addEventListener('click', handleFetchLatestContest);
                 analyzeContestBtn.addEventListener('click', handleAnalyzeContest);
+                analyzeRangeBtn.addEventListener('click', handleAnalyzeContestRange);
                 runAnalysisBtn.addEventListener('click', runAnalysis);
-                runRangeAnalysisBtn.addEventListener('click', runRangeAnalysis);
                 analysisResultsContainer.addEventListener('click', handleUseSuggestionClick);
                 selectAllBtn.addEventListener('click', handleSelectAll);
                 resetAllBtn.addEventListener('click', handleResetAll);
@@ -1269,15 +1269,9 @@
                 
                 applyThemeColor(config.color, config.hoverColor);
                 gameNameHeaders.forEach(h => h.textContent = config.displayName);
-                
-                let placeholder = `Ex: ${Array.from({length: config.betSize}, (_, i) => i + 1).join(', ')}`;
-                if (mode === 'supersete') {
-                    placeholder = 'Ex: 8, 2, 9, 0, 1, 5, 7';
-                }
-                document.getElementById('drawnNumbersInput').placeholder = placeholder;
-
                 rulesAlert.innerHTML = `<i class="fas fa-info-circle me-2"></i>Selecione ${config.isColumnar ? 'de 1 a 3 números por coluna' : `entre <strong>${config.minSelection}</strong> e <strong>${config.maxSelection}</strong> números`} para gerar as apostas.`;
                 selectionHeader.innerHTML = `<i class="fas fa-th me-2"></i>Selecione seus números`;
+                document.getElementById('drawnNumbersInput').placeholder = `Ex: ${Array.from({length: config.betSize}, (_, i) => i + 1).join(', ')}`;
 
                 numberGridContainer.classList.toggle('d-none', !!config.isColumnar);
                 superSeteGridContainer.classList.toggle('d-none', !config.isColumnar);
@@ -1293,7 +1287,6 @@
                 buildSpecialCheckers(config, document.getElementById('specialCheckerContainer'));
                 clearSelection();
                 analysisResultsContainer.style.display = 'none';
-                rangeAnalysisResultsContainer.style.display = 'none';
                 
                 document.querySelectorAll('.number-btn').forEach(btn => {
                     btn.classList.remove('hot-number', 'cold-number');
@@ -1588,8 +1581,8 @@
                 }
                 const drawnNumbers = drawnNumbersStr.split(/[\s,]+/).map(n => parseInt(n)).filter(n => !isNaN(n) && n > 0 && n <= config.totalNumbers);
                 
-                let expectedSize = config.betSize;
-                
+                let expectedSize = config.isColumnar ? 7 : config.betSize;
+
                 if (new Set(drawnNumbers).size !== expectedSize) {
                     showError(`Você deve inserir ${expectedSize} números únicos e válidos para a ${config.displayName}.`);
                     return;
@@ -1618,24 +1611,13 @@
                 document.querySelectorAll('.prize-check-icon').forEach(icon => icon.innerHTML = '');
                 state.hitResults.forEach((hitInfo, index) => {
                     const tier = config.hasTrevos ? `${hitInfo.hits}+${hitInfo.trevoHits}` : hitInfo.hits;
-                    
-                    if(config.prizeTiers.includes(tier)) {
-                        let prizeLevel = 'medium';
-                         if (config.apiName === 'maismilionaria') {
-                            if (tier === '6+2') prizeLevel = 'max';
-                            else if (['2+1', '2+2', '3+1'].includes(tier)) prizeLevel = 'min';
-                        } else {
-                            const numericTiers = config.prizeTiers.filter(t => typeof t === 'number').sort((a,b) => a-b);
-                            if (numericTiers.length > 0) {
-                                if (tier === numericTiers[numericTiers.length - 1]) prizeLevel = 'max';
-                                else if (tier === numericTiers[0]) prizeLevel = 'min';
-                            }
-                        }
-                        
+                    const tierIndex = config.prizeTiers.indexOf(tier);
+
+                    if(tierIndex !== -1) {
                         let trophyHtml = '';
-                        if (prizeLevel === 'max') trophyHtml = '<i class="fas fa-trophy text-warning" title="Acerto máximo!"></i>';
-                        else if (prizeLevel === 'min') trophyHtml = '<i class="fas fa-trophy text-bronze" title="Acerto mínimo"></i>';
-                        else trophyHtml = '<i class="fas fa-trophy text-secondary" title="Acerto intermediário"></i>';
+                        if (tierIndex === 0) trophyHtml = '<i class="fas fa-trophy text-warning" title="Acerto máximo!"></i>';
+                        else if (tierIndex < config.prizeTiers.length - 1) trophyHtml = '<i class="fas fa-trophy text-secondary" title="Acerto intermediário"></i>';
+                        else trophyHtml = '<i class="fas fa-trophy text-bronze" title="Acerto mínimo"></i>';
                         
                         const row = combinationsTable.rows[index];
                         if(row) {
@@ -1698,13 +1680,16 @@
             }
             
             function handleResetAll() {
-                localStorage.removeItem('lotteryGeneratorState');
-                clearSelection();
-                hideResults();
-                
-                state.currentGameMode = 'lotofacil';
-                gameModeSelect.value = state.currentGameMode;
-                updateUIForGameMode(state.currentGameMode);
+                // Usando um modal customizado ou uma confirmação mais simples no futuro
+                // if (confirm('Tem certeza que deseja limpar tudo? Isso removerá todas as apostas e seleções atuais.')) {
+                    localStorage.removeItem('lotteryGeneratorState');
+                    clearSelection();
+                    hideResults();
+                    
+                    state.currentGameMode = 'lotofacil';
+                    gameModeSelect.value = state.currentGameMode;
+                    updateUIForGameMode(state.currentGameMode);
+                // }
             }
 
             // --- CORE LOGIC ---
@@ -1734,7 +1719,7 @@
                         combo.filter(num => drawnNumbers.includes(num)).length;
                     
                     if (config.hasTrevos) {
-                        const trevoHits = specialSelections.trevos.filter(t => drawnTrevos.includes(t)).length;
+                        const trevoHits = state.selectedTrevos.filter(t => drawnTrevos.includes(t)).length;
                         const tier = `${hits}+${trevoHits}`;
                         state.hitResults.push({ hits, trevoHits });
                         if (prizeCounts.hasOwnProperty(tier)) {
@@ -1756,7 +1741,6 @@
                 analysisLoadingSpinner.style.display = 'block';
                 analysisResultsContainer.style.display = 'none';
                 analysisResultsContainer.innerHTML = '';
-                rangeAnalysisResultsContainer.style.display = 'none';
 
                 const config = lotteryConfigs[state.currentGameMode];
                 const count = parseInt(contestCountInput.value) || 100;
@@ -1797,189 +1781,6 @@
                     analysisResultsContainer.style.display = 'block';
                 }
                 analysisLoadingSpinner.style.display = 'none';
-            }
-            
-            async function runRangeAnalysis() {
-                analysisLoadingSpinner.style.display = 'block';
-                rangeAnalysisResultsContainer.style.display = 'none';
-                rangeAnalysisResultsContainer.innerHTML = '';
-                analysisResultsContainer.style.display = 'none';
-                hideError();
-
-                if (state.generatedCombinations.length === 0) {
-                    showError("Você precisa gerar combinações na aba 'Gerador' antes de analisar o desempenho.");
-                    analysisLoadingSpinner.style.display = 'none';
-                    return;
-                }
-
-                const startContest = document.getElementById('startContestInput').value;
-                const endContest = document.getElementById('endContestInput').value;
-
-                if (!startContest || !endContest || parseInt(startContest) >= parseInt(endContest)) {
-                    showError("Por favor, insira um intervalo de concursos válido.");
-                    analysisLoadingSpinner.style.display = 'none';
-                    return;
-                }
-
-                const config = lotteryConfigs[state.currentGameMode];
-                const contests = await getContestsInRangeFromLocalDB(config.apiName, startContest, endContest);
-
-                if (contests.length === 0) {
-                    rangeAnalysisResultsContainer.innerHTML = `<div class="alert alert-warning mt-3">Nenhum dado encontrado para o intervalo de concursos de ${startContest} a ${endContest}.</div>`;
-                    rangeAnalysisResultsContainer.style.display = 'block';
-                    analysisLoadingSpinner.style.display = 'none';
-                    return;
-                }
-
-                const allPrizes = [];
-                let totalPrizeMoney = 0;
-                const specialSelections = getSpecialSelections();
-
-                contests.forEach(contest => {
-                    const drawnNumbers = contest.listaDezenas.map(n => parseInt(n));
-                    const drawnTrevos = contest.listaTrevosSorteados ? contest.listaTrevosSorteados.map(t => parseInt(t)) : [];
-                    const drawnMonth = contest.mesSorte || null;
-                    const drawnTeam = contest.nomeTimeCoracao || contest.nomeTimeCoracaoMesSorte || null;
-
-                    let monthHit = false;
-                    if (config.hasMonth && specialSelections.month?.toLowerCase() === drawnMonth?.toLowerCase()) {
-                        monthHit = true;
-                    }
-                    let teamHit = false;
-                    if (config.hasTeam && specialSelections.team?.toLowerCase() === drawnTeam?.toLowerCase()) {
-                        teamHit = true;
-                    }
-
-                    state.generatedCombinations.forEach((userCombo, index) => {
-                        const hits = config.isColumnar ?
-                            userCombo.filter((num, i) => num === drawnNumbers[i]).length :
-                            userCombo.filter(num => drawnNumbers.includes(num)).length;
-
-                        let tier = hits;
-                        let trevoHits = 0;
-
-                        if (config.hasTrevos) {
-                            trevoHits = specialSelections.trevos.filter(t => drawnTrevos.includes(t)).length;
-                            tier = `${hits}+${trevoHits}`;
-                        }
-
-                        if (config.prizeTiers.includes(tier)) {
-                            const prizeValue = config.prizeValues[tier] || 0;
-                            totalPrizeMoney += prizeValue;
-                            allPrizes.push({
-                                contestNumber: contest.numero,
-                                date: contest.dataApuracao,
-                                userComboIndex: index + 1,
-                                userCombo: userCombo,
-                                hits: hits,
-                                trevoHits: trevoHits,
-                                tier: tier,
-                                prizeValue: prizeValue
-                            });
-                        }
-                    });
-                    
-                    if (monthHit) {
-                         const prizeValue = config.prizeValues['month'] || 0;
-                         totalPrizeMoney += prizeValue * state.generatedCombinations.length;
-                         allPrizes.push({
-                            contestNumber: contest.numero,
-                            date: contest.dataApuracao,
-                            userComboIndex: 'Todas',
-                            userCombo: [specialSelections.month],
-                            hits: 'Mês',
-                            trevoHits: 0,
-                            tier: 'month',
-                            prizeValue: prizeValue
-                         });
-                    }
-                    if (teamHit) {
-                         const prizeValue = config.prizeValues['team'] || 0;
-                         totalPrizeMoney += prizeValue * state.generatedCombinations.length;
-                         allPrizes.push({
-                            contestNumber: contest.numero,
-                            date: contest.dataApuracao,
-                            userComboIndex: 'Todas',
-                            userCombo: [specialSelections.team],
-                            hits: 'Time',
-                            trevoHits: 0,
-                            tier: 'team',
-                            prizeValue: prizeValue
-                         });
-                    }
-                });
-                
-                displayRangePerformanceResults(allPrizes, totalPrizeMoney, contests.length, startContest, endContest);
-                analysisLoadingSpinner.style.display = 'none';
-            }
-
-            function displayRangePerformanceResults(allPrizes, totalPrizeMoney, contestsAnalyzed, start, end) {
-                const container = document.getElementById('rangeAnalysisResultsContainer');
-                const config = lotteryConfigs[state.currentGameMode];
-                const totalCost = state.totalCostValue * contestsAnalyzed;
-                const netResult = totalPrizeMoney - totalCost;
-                const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-                let html = `<h4 class="mt-3">Desempenho entre os Concursos ${start} e ${end}</h4>`;
-
-                html += `
-                    <div class="card bg-dark my-3">
-                        <div class="card-body">
-                            <h5 class="card-title">Resumo Financeiro do Período</h5>
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item bg-dark text-white d-flex justify-content-between">Custo Total das Apostas: <span>${formatCurrency(totalCost)}</span></li>
-                                <li class="list-group-item bg-dark text-white d-flex justify-content-between">Total em Prêmios Estimados: <span>${formatCurrency(totalPrizeMoney)}</span></li>
-                                <li class="list-group-item bg-dark fw-bold d-flex justify-content-between ${netResult >= 0 ? 'text-success' : 'text-danger'}">Saldo Final: <span>${formatCurrency(netResult)}</span></li>
-                            </ul>
-                        </div>
-                    </div>
-                `;
-
-                if (allPrizes.length === 0) {
-                    html += `<div class="alert alert-info mt-3">Nenhuma das suas combinações geradas foi premiada no intervalo de concursos analisado.</div>`;
-                } else {
-                    html += `<h5><i class="fas fa-trophy me-2"></i>Apostas Premiadas Encontradas</h5>
-                             <div class="table-responsive">
-                                <table class="table table-sm table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Concurso</th>
-                                            <th>Data</th>
-                                            <th>Aposta #</th>
-                                            <th>Combinação Premiada</th>
-                                            <th>Acertos</th>
-                                            <th>Prêmio Est.</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>`;
-                    
-                    allPrizes.sort((a,b) => a.contestNumber - b.contestNumber).forEach(prize => {
-                        let acertosHtml = '';
-                        let comboHtml = '';
-
-                        if (prize.tier === 'month' || prize.tier === 'team') {
-                            acertosHtml = getTierText(prize.tier, config);
-                            comboHtml = `<span class="badge bg-info">${prize.userCombo[0]}</span>`;
-                        } else {
-                            acertosHtml = config.hasTrevos ? `${prize.hits} + ${prize.trevoHits}` : prize.hits;
-                            comboHtml = prize.userCombo.map(n => `<span class="badge bg-light text-dark me-1">${n.toString().padStart(2, '0')}</span>`).join('');
-                        }
-
-                        html += `<tr>
-                                    <td>${prize.contestNumber}</td>
-                                    <td>${prize.date}</td>
-                                    <td>${prize.userComboIndex}</td>
-                                    <td>${comboHtml}</td>
-                                    <td>${acertosHtml}</td>
-                                    <td>${formatCurrency(prize.prizeValue)}</td>
-                                 </tr>`;
-                    });
-
-                    html += `</tbody></table></div>`;
-                }
-
-                container.innerHTML = html;
-                container.style.display = 'block';
             }
 
             function calculateFrequency(numbers) {
@@ -2110,6 +1911,148 @@
                     if (state.month && document.getElementById('monthSelect')) document.getElementById('monthSelect').value = state.month;
 
                 }, 300);
+            }
+
+            // --- NEW --- Range Analysis Logic
+            async function handleAnalyzeContestRange() {
+                const startContestInput = document.getElementById('startContestInput');
+                const endContestInput = document.getElementById('endContestInput');
+                const resultContainer = document.getElementById('rangeHistoryAnalysisResult');
+
+                const start = parseInt(startContestInput.value);
+                const end = parseInt(endContestInput.value);
+                const config = lotteryConfigs[state.currentGameMode];
+
+                if (isNaN(start) || isNaN(end) || start <= 0 || end <= 0 || start > end) {
+                    resultContainer.innerHTML = '<div class="alert alert-danger">Por favor, insira um intervalo de concursos válido.</div>';
+                    resultContainer.classList.remove('d-none');
+                    return;
+                }
+                
+                resultContainer.innerHTML = `<div class="text-center"><div class="spinner-border text-info" role="status"></div> Analisando concursos de ${start} a ${end}...</div>`;
+                resultContainer.classList.remove('d-none');
+
+                let contestResults = await getContestsForAnalysisFromLocalDBByRange(config.apiName, start, end);
+                
+                // Fallback to API if local data is incomplete
+                const fetchedContestNumbers = new Set(contestResults.map(c => c.numero));
+                const missingContests = [];
+                for (let i = start; i <= end; i++) {
+                    if (!fetchedContestNumbers.has(i)) {
+                        missingContests.push(i);
+                    }
+                }
+
+                if (missingContests.length > 0) {
+                    console.warn(`Faltando ${missingContests.length} concursos no db.json, buscando na API...`);
+                    const promises = missingContests.map(num =>
+                        fetchApiData(`https://servicebus2.caixa.gov.br/portaldeloterias/api/${config.apiName}/${num}`)
+                        .catch(e => null)
+                    );
+                    const apiResults = (await Promise.all(promises)).filter(Boolean);
+                    contestResults = [...contestResults, ...apiResults].sort((a,b) => a.numero - b.numero);
+                }
+
+                if (contestResults.length === 0) {
+                    resultContainer.innerHTML = '<div class="alert alert-warning">Nenhum resultado encontrado para o intervalo informado.</div>';
+                    return;
+                }
+
+                processAndDisplayRangeHistory(contestResults, config);
+            }
+            
+            function processAndDisplayRangeHistory(results, config) {
+                const resultContainer = document.getElementById('rangeHistoryAnalysisResult');
+                const winningCombinations = new Map(); // combo_string -> { combo: [], count: 0, contests: [] }
+                let totalPrizesInPeriod = 0;
+
+                results.forEach(contest => {
+                    const drawnNumbers = contest.listaDezenas.map(n => parseInt(n));
+                    const drawnTrevos = contest.listaTrevosSorteados ? contest.listaTrevosSorteados.map(t => parseInt(t)) : [];
+                    
+                    state.generatedCombinations.forEach((combo, comboIndex) => {
+                        let hits = config.isColumnar ?
+                            combo.filter((num, i) => num === drawnNumbers[i]).length :
+                            combo.filter(num => drawnNumbers.includes(num)).length;
+
+                        let tier;
+                        if (config.hasTrevos) {
+                            const trevoHits = state.selectedTrevos.filter(t => drawnTrevos.includes(t)).length;
+                            tier = `${hits}+${trevoHits}`;
+                        } else {
+                            tier = hits;
+                        }
+
+                        if (config.prizeTiers.includes(tier)) {
+                            const comboKey = combo.join(',');
+                            if (!winningCombinations.has(comboKey)) {
+                                winningCombinations.set(comboKey, { combo: combo, count: 0, contests: [] });
+                            }
+                            const winInfo = winningCombinations.get(comboKey);
+                            winInfo.count++;
+                            winInfo.contests.push({num: contest.numero, tier: tier});
+                            totalPrizesInPeriod += config.prizeValues[tier] || 0;
+                        }
+                    });
+                });
+                
+                state.winningCombinationsInRange = Array.from(winningCombinations.values());
+
+                let html = `<h5>Análise de ${results.length} concursos (${results[0].numero} a ${results[results.length - 1].numero})</h5>`;
+                
+                if (winningCombinations.size === 0) {
+                    html += '<div class="alert alert-info mt-3">Nenhuma de suas combinações foi premiada neste período.</div>';
+                    resultContainer.innerHTML = html;
+                    return;
+                }
+
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <p class="mb-0"><strong>${winningCombinations.size}</strong> combinações premiadas encontradas. Total estimado em prêmios: <strong>${totalPrizesInPeriod.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</strong></p>
+                        <button class="btn btn-sm btn-outline-success" id="exportWinningCombosBtn"><i class="fas fa-file-export me-1"></i> Exportar Premiadas</button>
+                    </div>
+                `;
+
+                html += '<div class="table-responsive mt-3" style="max-height: 400px;"><table class="table table-sm table-hover"><thead><tr><th>Combinação</th><th>Vezes Premiada</th><th>Concursos</th></tr></thead><tbody>';
+                
+                const sortedWinners = [...winningCombinations.values()].sort((a,b) => b.count - a.count);
+
+                sortedWinners.forEach(({ combo, count, contests }) => {
+                    const comboHtml = combo.map(n => `<span class="badge bg-secondary">${n.toString().padStart(2, '0')}</span>`).join(' ');
+                    const contestsHtml = contests.map(c => `<span class="badge bg-light text-dark" title="Acertos: ${getTierText(c.tier, config)}">${c.num}</span>`).join(' ');
+                    html += `<tr><td>${comboHtml}</td><td>${count}</td><td>${contestsHtml}</td></tr>`;
+                });
+
+                html += '</tbody></table></div>';
+                resultContainer.innerHTML = html;
+                
+                document.getElementById('exportWinningCombosBtn').addEventListener('click', handleExportWinningCombinations);
+            }
+            
+            function handleExportWinningCombinations() {
+                const config = lotteryConfigs[state.currentGameMode];
+                if (state.winningCombinationsInRange.length === 0) {
+                    showError("Não há combinações premiadas para exportar.");
+                    return;
+                }
+                
+                let content = `Combinações Premiadas - ${config.displayName}\n`;
+                content += `Análise entre os concursos ${document.getElementById('startContestInput').value} e ${document.getElementById('endContestInput').value}\n\n`;
+
+                state.winningCombinationsInRange.forEach(({ combo, count, contests }) => {
+                    content += `Combinação: ${combo.join(' ')}\n`;
+                    content += `Premiada ${count} vez(es) nos concursos: ${contests.map(c => c.num).join(', ')}\n\n`;
+                });
+
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${config.apiName}_premiadas.txt`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
             }
 
             initializeApp();
