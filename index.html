@@ -199,6 +199,13 @@
         .selected-numbers, #resultsSection {
             transition: opacity 0.4s ease, transform 0.4s ease;
         }
+        
+        /* Accordion custom color */
+        .accordion-button:not(.collapsed) {
+            color: var(--bs-accordion-active-color);
+            background-color: var(--bs-accordion-active-bg);
+            box-shadow: inset 0 calc(-1 * var(--bs-accordion-border-width)) 0 var(--bs-accordion-border-color);
+        }
     </style>
 </head>
 
@@ -239,6 +246,9 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="analysis-tab" data-bs-toggle="tab" data-bs-target="#analysis-tab-pane" type="button" role="tab"><i class="fas fa-chart-bar me-1"></i> Análise</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="latest-results-tab" data-bs-toggle="tab" data-bs-target="#latest-results-tab-pane" type="button" role="tab"><i class="fas fa-award me-1"></i> Últimos Resultados</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming-tab-pane" type="button" role="tab"><i class="fas fa-calendar-alt me-1"></i> Próximos Concursos</button>
@@ -381,6 +391,27 @@
                             <div id="analysisLoadingSpinner" class="card-body text-center" style="display: none;">
                                 <div class="spinner-border text-warning" role="status"></div>
                                 <p class="mt-2">Buscando e analisando dados... Isso pode levar um momento.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Latest Results Pane -->
+            <div class="tab-pane fade" id="latest-results-tab-pane" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-lg-8 mx-auto">
+                        <div class="card">
+                            <div class="card-header text-white">
+                                <h4 class="mb-0"><i class="fas fa-award me-2"></i>Últimos Resultados Sorteados</h4>
+                            </div>
+                            <div class="card-body" id="latestResultsContainer">
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Carregando...</span>
+                                    </div>
+                                    <p class="mt-2">Carregando informações...</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -593,7 +624,7 @@
                     return [];
                 }
                 return db[gameMode].filter(contest => contest.numero >= start && contest.numero <= end)
-                                        .sort((a, b) => a.numero - b.numero);
+                                    .sort((a, b) => a.numero - b.numero);
             }
 
             async function fetchApiData(url) {
@@ -1266,6 +1297,7 @@
             const analyzeRangeBtn = document.getElementById('analyzeRangeBtn');
             const rangeHistoryAnalysisResult = document.getElementById('rangeHistoryAnalysisResult');
             const upcomingTab = document.getElementById('upcoming-tab');
+            const latestResultsTab = document.getElementById('latest-results-tab');
 
 
             // --- STATE ---
@@ -1326,6 +1358,14 @@
                     if (!upcomingDataLoaded) {
                         fetchUpcomingContests();
                         upcomingDataLoaded = true;
+                    }
+                });
+
+                let latestResultsDataLoaded = false;
+                latestResultsTab.addEventListener('show.bs.tab', function (event) {
+                    if (!latestResultsDataLoaded) {
+                        fetchLatestResults();
+                        latestResultsDataLoaded = true;
                     }
                 });
 
@@ -2124,8 +2164,8 @@
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
             }
-            
-            // NOVA FUNÇÃO PARA BUSCAR DADOS DOS PRÓXIMOS CONCURSOS
+
+            // --- Upcoming Contests Logic ---
             async function fetchUpcomingContests() {
                 const container = document.getElementById('upcomingContestsContainer');
                 container.innerHTML = `
@@ -2180,6 +2220,96 @@
                 } catch (error) {
                     console.error('Erro ao buscar próximos concursos:', error);
                     container.innerHTML = `<div class="alert alert-danger">Não foi possível carregar as informações dos próximos concursos. Verifique se o arquivo <strong>loterias.json</strong> está no mesmo diretório do seu projeto.</div>`;
+                }
+            }
+            
+            // --- Latest Results Logic ---
+            async function fetchLatestResults() {
+                const container = document.getElementById('latestResultsContainer');
+                container.innerHTML = `
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="mt-2">Carregando informações...</p>
+                    </div>`;
+
+                try {
+                    const response = await fetch('loterias.json');
+                    if (!response.ok) {
+                        throw new Error('Não foi possível carregar o arquivo loterias.json');
+                    }
+                    const data = await response.json();
+
+                    let html = '<div class="accordion" id="latestResultsAccordion">';
+                    let itemIndex = 0;
+
+                    for (const gameKey in lotteryConfigs) {
+                        const config = lotteryConfigs[gameKey];
+                        const contestData = data[config.apiName];
+
+                        if (contestData && contestData.listaDezenas && contestData.listaDezenas.length > 0) {
+                             const datePart = contestData.dataApuracao.split(' ')[0];
+                             const [day, month, year] = datePart.split('/');
+                             const formattedDate = `${day}/${month}/${year}`;
+                            
+                            const drawnNumbersHtml = contestData.listaDezenas.map(n => `<span class="badge bg-light text-dark me-1">${n}</span>`).join('');
+                            
+                            let specialHtml = '';
+                            if (config.hasTrevos && contestData.listaTrevosSorteados) {
+                                specialHtml += `<p class="mb-1"><strong>Trevos:</strong> ${contestData.listaTrevosSorteados.map(t => `<span class="badge bg-success">${t}</span>`).join(' ')}</p>`;
+                            }
+                            if (config.hasMonth && contestData.mesSorte) {
+                                 specialHtml += `<p class="mb-1"><strong>Mês da Sorte:</strong> <span class="badge bg-info">${contestData.mesSorte}</span></p>`;
+                            }
+                            if (config.hasTeam && (contestData.nomeTimeCoracao || contestData.nomeTimeCoracaoMesSorte)) {
+                                 specialHtml += `<p class="mb-1"><strong>Time do Coração:</strong> <span class="badge bg-info">${contestData.nomeTimeCoracao || contestData.nomeTimeCoracaoMesSorte}</span></p>`;
+                            }
+
+                            let winnersHtml = '';
+                            if (contestData.listaRateioPremio && contestData.listaRateioPremio.length > 0) {
+                                winnersHtml = '<ul class="list-group list-group-flush mt-2">';
+                                contestData.listaRateioPremio.forEach(prize => {
+                                    if (prize.numeroDeGanhadores > 0) {
+                                        winnersHtml += `
+                                            <li class="list-group-item d-flex justify-content-between align-items-center p-1 bg-transparent">
+                                                <small>${prize.descricaoFaixa}</small>
+                                                <span class="badge bg-primary rounded-pill">${prize.numeroDeGanhadores.toLocaleString('pt-BR')} Ganhador(es)</span>
+                                            </li>`;
+                                    }
+                                });
+                                winnersHtml += '</ul>';
+                            } else {
+                                winnersHtml = '<p class="text-muted small mt-2">Informações de ganhadores não disponíveis.</p>';
+                            }
+
+                            html += `
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading-${itemIndex}">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${itemIndex}" style="--bs-accordion-btn-color: ${config.color}; --bs-accordion-btn-active-color: ${config.color};">
+                                            <strong>${config.displayName}</strong>&nbsp;- Concurso ${contestData.numero} (${formattedDate})
+                                        </button>
+                                    </h2>
+                                    <div id="collapse-${itemIndex}" class="accordion-collapse collapse" data-bs-parent="#latestResultsAccordion">
+                                        <div class="accordion-body">
+                                            <p><strong>Dezenas:</strong> ${drawnNumbersHtml}</p>
+                                            ${specialHtml}
+                                            <h6>Premiação</h6>
+                                            ${winnersHtml}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            itemIndex++;
+                        }
+                    }
+
+                    html += '</div>';
+                    container.innerHTML = html;
+
+                } catch (error) {
+                    console.error('Erro ao buscar últimos resultados:', error);
+                    container.innerHTML = `<div class="alert alert-danger">Não foi possível carregar as informações dos últimos resultados. Verifique se o arquivo <strong>loterias.json</strong> está no mesmo diretório do seu projeto.</div>`;
                 }
             }
 
