@@ -1496,24 +1496,18 @@
                 generateBtn.addEventListener('click', handleGenerateClick);
                 checkResultsBtn.addEventListener('click', handleCheckResults);
                 
-                // CORREÇÃO: Argumentos passados corretamente para as funções de exportação
-                exportCsv.addEventListener('click', (e) => { 
-                    e.preventDefault(); 
-                    exportData('csv', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.hitResults, document.getElementById('drawnNumbersInput').value.trim(), '', state.fixedNumbers); 
-                });
-                exportTxt.addEventListener('click', (e) => { 
-                    e.preventDefault(); 
-                    exportData('txt', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.hitResults, document.getElementById('drawnNumbersInput').value.trim(), '', state.fixedNumbers); 
-                });
-                exportPdf.addEventListener('click', (e) => { 
-                    e.preventDefault(); 
-                    exportData('pdf', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.hitResults, document.getElementById('drawnNumbersInput').value.trim(), '', state.fixedNumbers); 
-                });
-                exportPng.addEventListener('click', (e) => { 
-                    e.preventDefault(); 
+                const exportHandler = (format) => (e) => {
+                    e.preventDefault();
+                    const config = lotteryConfigs[state.currentGameMode];
+                    const drawnNumbersStr = document.getElementById('drawnNumbersInput').value.trim();
                     const drawnTrevosStr = document.getElementById('drawnTrevosInput')?.value.trim() || '';
-                    exportData('png', state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.hitResults, document.getElementById('drawnNumbersInput').value.trim(), drawnTrevosStr, state.fixedNumbers); 
-                });
+                    exportData(format, state.generatedCombinations, config, getSpecialSelections(), state.hitResults, drawnNumbersStr, drawnTrevosStr, state.fixedNumbers);
+                };
+
+                exportCsv.addEventListener('click', exportHandler('csv'));
+                exportTxt.addEventListener('click', exportHandler('txt'));
+                exportPdf.addEventListener('click', exportHandler('pdf'));
+                exportPng.addEventListener('click', exportHandler('png'));
 
                 copyGamesBtn.addEventListener('click', () => copyCombinationsToClipboard(state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.fixedNumbers));
                 generationModeRadios.forEach(radio => radio.addEventListener('change', (e) => {
@@ -2096,7 +2090,8 @@
                 const hotNumbers = frequency.slice(0, betSize).map(item => item[0]);
 
                 const allPossibleNumbers = new Set(Array.from({ length: totalNumbers }, (_, i) => i + 1));
-                const drawnNumbers = new Set(frequency.map(item => item[0]);
+                // *** CORREÇÃO AQUI: Parêntese faltando ***
+                const drawnNumbers = new Set(frequency.map(item => item[0]));
                 const neverDrawn = [...allPossibleNumbers].filter(num => !drawnNumbers.has(num));
                 const leastFrequent = frequency.slice(-totalNumbers).map(item => item[0]).reverse();
                 const coldNumbers = [...neverDrawn, ...leastFrequent].slice(0, betSize);
@@ -2151,50 +2146,59 @@
                 const saved = localStorage.getItem('lotteryGeneratorState');
                 if (!saved) return;
                 
-                const savedState = JSON.parse(saved);
-                
-                gameModeSelect.value = savedState.currentGameMode;
-                updateUIForGameMode(savedState.currentGameMode);
-                
-                setTimeout(() => {
-                    state = { ...state, ...savedState };
+                try {
+                    const savedState = JSON.parse(saved);
                     
-                    updateSelectedNumbersDisplay(state.selectedNumbers, state.fixedNumbers, state.superSeteSelections, state.selectedTrevos, lotteryConfigs[state.currentGameMode]);
+                    gameModeSelect.value = savedState.currentGameMode;
+                    updateUIForGameMode(savedState.currentGameMode);
                     
-                    if (state.generatedCombinations.length > 0) {
-                        displayResults(state.generatedCombinations, state.totalCostValue, lotteryConfigs[state.currentGameMode], state.fixedNumbers, getSpecialSelections());
-                    }
-                    
-                    if (lotteryConfigs[state.currentGameMode].isColumnar) {
-                        document.querySelectorAll('#superSeteGridContainer .number-btn').forEach(btn => {
-                            const num = parseInt(btn.dataset.number);
-                            const col = parseInt(btn.dataset.column);
-                            if (state.superSeteSelections[col] && state.superSeteSelections[col].includes(num)) {
-                                btn.classList.add('active');
-                            }
-                        });
-                    } else {
-                        document.querySelectorAll('#numberGridContainer .number-btn').forEach(btn => {
-                            const num = parseInt(btn.dataset.number);
-                            if (state.selectedNumbers.includes(num)) btn.classList.add('active');
-                            if (state.fixedNumbers.includes(num)) {
-                                btn.classList.add('btn-fixed');
-                                btn.innerHTML = `<span>${num.toString().padStart(2, '0')}</span><i class="fas fa-thumbtack"></i>`;
-                            }
-                        });
-                    }
-
-                    document.querySelectorAll('.trevo-btn').forEach(btn => {
-                        const trevo = parseInt(btn.dataset.trevo);
-                        if (state.selectedTrevos.includes(trevo)) {
-                            btn.classList.add('active');
+                    setTimeout(() => {
+                        state = { ...state, ...savedState };
+                        
+                        updateSelectedNumbersDisplay(state.selectedNumbers, state.fixedNumbers, state.superSeteSelections, state.selectedTrevos, lotteryConfigs[state.currentGameMode]);
+                        
+                        if (state.generatedCombinations && state.generatedCombinations.length > 0) {
+                            displayResults(state.generatedCombinations, state.totalCostValue, lotteryConfigs[state.currentGameMode], state.fixedNumbers, getSpecialSelections());
                         }
-                    });
+                        
+                        if (lotteryConfigs[state.currentGameMode].isColumnar) {
+                             if(state.superSeteSelections) {
+                                document.querySelectorAll('#superSeteGridContainer .number-btn').forEach(btn => {
+                                    const num = parseInt(btn.dataset.number);
+                                    const col = parseInt(btn.dataset.column);
+                                    if (state.superSeteSelections[col] && state.superSeteSelections[col].includes(num)) {
+                                        btn.classList.add('active');
+                                    }
+                                });
+                            }
+                        } else {
+                            document.querySelectorAll('#numberGridContainer .number-btn').forEach(btn => {
+                                const num = parseInt(btn.dataset.number);
+                                if (state.selectedNumbers.includes(num)) btn.classList.add('active');
+                                if (state.fixedNumbers.includes(num)) {
+                                    btn.classList.add('btn-fixed');
+                                    btn.innerHTML = `<span>${num.toString().padStart(2, '0')}</span><i class="fas fa-thumbtack"></i>`;
+                                }
+                            });
+                        }
 
-                    if (state.team && document.getElementById('teamSelect')) document.getElementById('teamSelect').value = state.team;
-                    if (state.month && document.getElementById('monthSelect')) document.getElementById('monthSelect').value = state.month;
+                        if(state.selectedTrevos) {
+                            document.querySelectorAll('.trevo-btn').forEach(btn => {
+                                const trevo = parseInt(btn.dataset.trevo);
+                                if (state.selectedTrevos.includes(trevo)) {
+                                    btn.classList.add('active');
+                                }
+                            });
+                        }
 
-                }, 300);
+                        if (state.team && document.getElementById('teamSelect')) document.getElementById('teamSelect').value = state.team;
+                        if (state.month && document.getElementById('monthSelect')) document.getElementById('monthSelect').value = state.month;
+
+                    }, 300);
+                } catch(e) {
+                    console.error("Failed to restore state from localStorage:", e);
+                    localStorage.removeItem('lotteryGeneratorState');
+                }
             }
 
             // --- NEW --- Range Analysis Logic
