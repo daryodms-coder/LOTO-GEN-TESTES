@@ -1,9 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://js.puter.com;">
     <title>Gerador e Analisador de Loterias</title>
     
     <!-- Bootstrap CSS -->
@@ -16,9 +16,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- html2canvas for PNG Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
-    <!-- Puter.js for Cloud Storage -->
-    <script src="https://js.puter.com/v2/"></script>
 
     <style>
         /* CSS Variables for dynamic theming */
@@ -260,9 +257,6 @@
                     </select>
                 </div>
                 <div class="ms-2">
-                    <button id="loadFromPuterBtn" class="btn btn-outline-primary"><i class="fas fa-cloud-download-alt me-1"></i> Carregar Jogo</button>
-                </div>
-                <div class="ms-2">
                     <button id="resetAllBtn" class="btn btn-outline-warning">
                         <i class="fas fa-redo me-1"></i> Limpar Tudo
                     </button>
@@ -348,7 +342,6 @@
                                             <p class="mb-0" id="totalCost"></p>
                                         </div>
                                         <div class="d-flex gap-2">
-                                            <button class="btn btn-outline-primary" id="saveToPuterBtn"><i class="fas fa-cloud-upload-alt me-1"></i> Salvar na Nuvem</button>
                                             <button class="btn btn-outline-info" id="copyGamesBtn"><i class="fas fa-copy me-1"></i> Copiar Jogos</button>
                                             <div class="dropdown">
                                                 <button class="btn btn-outline-success dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown"><i class="fas fa-download me-1"></i> Exportar</button>
@@ -1504,15 +1497,6 @@
                 generateBtn.addEventListener('click', handleGenerateClick);
                 checkResultsBtn.addEventListener('click', handleCheckResults);
                 
-                // --- PUTER.COM LISTENERS ---
-                const saveToPuterBtn = document.getElementById('saveToPuterBtn');
-                if (saveToPuterBtn) {
-                    saveToPuterBtn.addEventListener('click', handleSaveToPuter);
-                }
-                const loadFromPuterBtn = document.getElementById('loadFromPuterBtn');
-                loadFromPuterBtn.addEventListener('click', handleLoadFromPuter);
-                // ---------------------------
-
                 const exportHandler = (format) => (e) => {
                     e.preventDefault();
                     const config = lotteryConfigs[state.currentGameMode];
@@ -1806,8 +1790,9 @@
                         console.error(`Falha ao buscar dados do concurso ${contestNumber} (local e API):`, error);
                         const fallbackUrl = `https://confiraloterias.com.br/resultados-da-${config.fallbackSlug}/concurso-${contestNumber}`;
                         historyAnalysisResult.innerHTML = `<div class="alert alert-danger">
-                            Falha ao buscar dados do concurso ${contestNumber}.<br>
-                            Verifique o número e tente novamente, ou consulte manualmente em: <br>
+                            Falha ao buscar dados do concurso ${contestNumber}.
+                            <br>
+                            Verifique o número e tente novamente, ou consulte manualmente em: 
                             <a href="${fallbackUrl}" target="_blank" rel="noopener noreferrer">Confira Loterias</a>
                         </div>`;
                     }
@@ -2507,87 +2492,8 @@
                 }
             }
 
-            // --- PUTER.COM FUNCTIONS ---
-            async function handleSaveToPuter() {
-                if (state.generatedCombinations.length === 0) {
-                    showError('Não há combinações para salvar.');
-                    return;
-                }
-
-                const dataToSave = {
-                    gameMode: state.currentGameMode,
-                    displayName: lotteryConfigs[state.currentGameMode].displayName,
-                    createdAt: new Date().toISOString(),
-                    cost: state.totalCostValue,
-                    fixedNumbers: state.fixedNumbers,
-                    specialSelections: getSpecialSelections(),
-                    combinations: state.generatedCombinations
-                };
-
-                const jsonString = JSON.stringify(dataToSave, null, 2);
-                const fileName = `jogo_${state.currentGameMode}_${new Date().getTime()}.json`;
-
-                try {
-                    await puter.fs.write(fileName, jsonString);
-                    alert(`Jogo salvo com sucesso como "${fileName}" na sua conta Puter.com!`);
-                } catch (error) {
-                    console.error('Erro ao salvar no Puter.com:', error);
-                    showError('Não foi possível salvar o arquivo. Você precisa autorizar o acesso à sua conta Puter.com.');
-                }
-            }
-
-            async function handleLoadFromPuter() {
-                try {
-                    const [file] = await puter.ui.showFilePicker({
-                        types: [{
-                            description: 'Jogos Salvos',
-                            accept: { 'application/json': ['.json'] }
-                        }]
-                    });
-
-                    if (!file) return;
-
-                    const jsonString = await file.text();
-                    const savedData = JSON.parse(jsonString);
-
-                    if (!savedData.gameMode || !savedData.combinations) {
-                        throw new Error("Formato de arquivo inválido.");
-                    }
-                    
-                    gameModeSelect.value = savedData.gameMode;
-                    updateUIForGameMode(savedData.gameMode);
-
-                    setTimeout(() => {
-                        state.currentGameMode = savedData.gameMode;
-                        state.generatedCombinations = savedData.combinations;
-                        state.totalCostValue = savedData.cost;
-                        state.fixedNumbers = savedData.fixedNumbers || [];
-                        
-                        displayResults(
-                            state.generatedCombinations, 
-                            state.totalCostValue, 
-                            lotteryConfigs[state.currentGameMode], 
-                            state.fixedNumbers, 
-                            savedData.specialSelections
-                        );
-                        
-                        // Garante que o painel do gerador esteja visível
-                        const generatorTab = new bootstrap.Tab(document.getElementById('generator-tab'));
-                        generatorTab.show();
-
-                        alert(`Jogo "${file.name}" carregado com sucesso!`);
-                    }, 150);
-
-                } catch (error) {
-                    console.error('Erro ao carregar do Puter.com:', error);
-                    showError('Ocorreu um erro ao carregar o arquivo ou o formato é inválido.');
-                }
-            }
-
-
             initializeApp();
         });
     </script>
 </body>
 </html>
-
