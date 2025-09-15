@@ -2133,172 +2133,52 @@
         // --- NEW/MODIFIED FUNCTIONS ---
 
         async function handleUpdateSheetClick() {
-            const button = document.getElementById('updateSheetBtn');
-            const spinner = button.querySelector('.spinner-border');
-            const icon = button.querySelector('.fa-sync-alt');
-            
-            if (!SCRIPT_URL || SCRIPT_URL.includes('COLE_A_URL')) {
-                showError("A URL do Script do Google Apps não foi configurada. Atualize a variável SCRIPT_URL no código.");
-                return;
-            }
+    const button = document.getElementById('updateSheetBtn');
+    const spinner = button.querySelector('.spinner-border');
+    const icon = button.querySelector('.fa-sync-alt');
 
-            button.disabled = true;
-            spinner.classList.remove('d-none');
-            icon.classList.add('d-none');
-            hideError();
+    if (!SCRIPT_URL || SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbzh60Z7EQ5_oaMN1jkGsHXh0D9UIJvWz82lln3s_kCqSDXCOkCHMcRXpm--tWoTvIwVyQ/exec')) {
+        showError("A URL do Script do Google Apps não foi configurada. Atualize a variável SCRIPT_URL no código.");
+        return;
+    }
 
-            try {
-                const config = lotteryConfigs[state.currentGameMode];
-                const apiName = config.apiName;
+    button.disabled = true;
+    spinner.classList.remove('d-none');
+    icon.classList.add('d-none');
+    hideError();
 
-                // 1. Get latest contest from API
-                const latestApiContest = await fetchApiData(`https://servicebus2.caixa.gov.br/portaldeloterias/api/${apiName}`);
-                if (!latestApiContest || !latestApiContest.numero) throw new Error("Não foi possível obter o último concurso da API da Caixa.");
-                
-                // 2. Get latest contest from our Sheet DB
-                const latestSheetContest = await getLatestContestFromSheetDB(apiName);
-                const startContestNum = latestSheetContest ? latestSheetContest.numero + 1 : 1;
-                const endContestNum = latestApiContest.numero;
-                
-                if (startContestNum > endContestNum) {
-                    alert('Os dados da sua planilha já estão atualizados!');
-                    return;
-                }
+    try {
+        const apiName = lotteryConfigs[state.currentGameMode].apiName;
 
-                let contestsToUpdate = [];
-                for (let i = startContestNum; i <= endContestNum; i++) {
-                    const contestData = await fetchApiData(`https://servicebus2.caixa.gov.br/portaldeloterias/api/${apiName}/${i}`);
-                    if (contestData && contestData.numero) {
-                        contestsToUpdate.push(contestData);
-                    }
-                }
+        // Envia um comando simples para o Apps Script
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'cors',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, // Tipo de conteúdo diferente para Apps Script
+            body: JSON.stringify({
+                action: 'updateFromApi', // A nova ação que o script vai entender
+                game: apiName
+            })
+        });
 
-                if (contestsToUpdate.length > 0) {
-                    // Send data to Google Apps Script to be saved
-                    const response = await fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            game: apiName,
-                            contests: contestsToUpdate
-                        })
-                    });
+        if (!response.ok) throw new Error('Falha na comunicação com a planilha.');
 
-                    if (!response.ok) throw new Error('Falha ao enviar dados para a planilha.');
-                    
-                    const result = await response.json();
-                    if(result.status !== 'success') throw new Error(result.message || 'Erro no script do Google.');
-                    
-                    // Invalidate cache and show success
-                    sheetDatabaseCache = null;
-                    alert(`${contestsToUpdate.length} novo(s) concurso(s) de ${config.displayName} foram adicionados à planilha!`);
-                    
-                } else {
-                     alert(`Nenhum concurso novo encontrado entre ${startContestNum} e ${endContestNum}.`);
-                }
+        const result = await response.json();
+        if(result.status !== 'success') throw new Error(result.message || 'Erro retornado pelo script do Google.');
 
-            } catch (error) {
-                console.error("Erro ao atualizar a planilha:", error);
-                showError(`Erro ao atualizar: ${error.message}`);
-            } finally {
-                button.disabled = false;
-                spinner.classList.add('d-none');
-                icon.classList.remove('d-none');
-            }
-        }
+        // Invalida o cache para forçar a releitura dos novos dados e mostra a mensagem de sucesso
+        sheetDatabaseCache = null;
+        alert(result.message);
 
-        async function fetchLatestResults() {
-            const container = document.getElementById('latestResultsContainer');
-            container.innerHTML = '';
-            
-            const db = await fetchSheetDatabase();
-            if (!db) {
-                container.innerHTML = `<div class="alert alert-warning">Não foi possível carregar os dados da planilha.</div>`;
-                return;
-            }
-
-            const accordion = document.createElement('div');
-            accordion.className = 'accordion';
-            accordion.id = 'latestResultsAccordion';
-            
-            for (const gameMode in lotteryConfigs) {
-                const config = lotteryConfigs[gameMode];
-                const gameData = db[gameMode] || [];
-                if (gameData.length > 0) {
-                    const latest = gameData.reduce((a, b) => (a.numero > b.numero ? a : b));
-                    const dezenasHtml = latest.dezenas.map(d => `<span class="badge bg-secondary me-1">${d.toString().padStart(2, '0')}</span>`).join(' ');
-                    const trevosHtml = latest.trevosSorteados ? `<br><small><strong>Trevos:</strong> ${latest.trevosSorteados.join(', ')}</small>` : '';
-                    const timeHtml = latest.timeCoracaoMesSorte ? `<br><small><strong>Time:</strong> ${latest.timeCoracaoMesSorte}</small>` : '';
-                    const mesHtml = latest.mesSorte ? `<br><small><strong>Mês:</strong> ${latest.mesSorte}</small>` : '';
-
-                     const item = `
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${gameMode}">
-                                    <strong style="color: ${config.color};">${config.displayName}</strong>&nbsp;- Concurso #${latest.numero} (${latest.dataApuracao})
-                                </button>
-                            </h2>
-                            <div id="collapse-${gameMode}" class="accordion-collapse collapse" data-bs-parent="#latestResultsAccordion">
-                                <div class="accordion-body">
-                                    ${dezenasHtml}
-                                    ${trevosHtml}
-                                    ${timeHtml}
-                                    ${mesHtml}
-                                </div>
-                            </div>
-                        </div>`;
-                    accordion.innerHTML += item;
-                }
-            }
-            container.appendChild(accordion);
-        }
-
-        async function fetchUpcomingContests() {
-            const container = document.getElementById('upcomingContestsContainer');
-            try {
-                const data = await fetchApiData('https://servicebus2.caixa.gov.br/portaldeloterias/api/home/ultimos-resultados');
-                let html = '<div class="row">';
-                for (const gameMode in lotteryConfigs) {
-                    const config = lotteryConfigs[gameMode];
-                    const gameData = data[config.apiName];
-                    if(gameData) {
-                        const nextDrawDate = gameData.dataProximoConcurso;
-                        const prizeEstimate = gameData.valorEstimadoProximoConcurso.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                        html += `
-                        <div class="col-md-6 mb-3">
-                            <div class="card h-100" style="border-left: 4px solid ${config.color};">
-                                <div class="card-body">
-                                    <h5 class="card-title">${config.displayName}</h5>
-                                    <p class="card-text mb-1"><strong>Próximo Concurso:</strong> #${gameData.numeroProximoConcurso}</p>
-                                    <p class="card-text mb-1"><strong>Data:</strong> ${nextDrawDate}</p>
-                                    <p class="card-text mb-0"><strong>Prêmio Estimado:</strong> <span class="fw-bold">${prizeEstimate}</span></p>
-                                </div>
-                            </div>
-                        </div>
-                        `;
-                    }
-                }
-                html += '</div>';
-                container.innerHTML = html;
-            } catch (error) {
-                console.error("Erro ao buscar próximos concursos:", error);
-                container.innerHTML = '<div class="alert alert-danger">Não foi possível carregar as informações dos próximos concursos.</div>';
-            }
-        }
-
-        function handleUseSuggestionClick(e) {
-            if (!e.target.classList.contains('use-suggestion-btn')) return;
-            
-            const numbersStr = e.target.dataset.suggestion;
-            const numbers = numbersStr.split(',').map(n => parseInt(n));
-            const config = lotteryConfigs[state.currentGameMode];
-
-            if (config.isColumnar) {
-                showError("Sugestões não são aplicáveis para o Super Sete.");
-                return;
-            }
-
+    } catch (error) {
+        console.error("Erro ao solicitar atualização da planilha:", error);
+        showError(`Erro ao atualizar: ${error.message}`);
+    } finally {
+        button.disabled = false;
+        spinner.classList.add('d-none');
+        icon.classList.remove('d-none');
+    }
+}
             // Go to generator tab
             const generatorTab = new bootstrap.Tab(document.getElementById('generator-tab'));
             generatorTab.show();
