@@ -437,7 +437,6 @@
                                 <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Análise de Frequência: <span class="gameNameHeader"></span></h4>
                             </div>
                             <div class="card-body" id="analysisCardBody">
-                                <!-- MODIFICATION START: Added update button and adjusted layout -->
                                 <div class="row g-3 align-items-end">
                                     <div class="col-md-5">
                                         <label for="contestCountInput" class="form-label">Analisar os últimos concursos:</label>
@@ -453,7 +452,6 @@
                                         </button>
                                     </div>
                                 </div>
-                                <!-- MODIFICATION END -->
                             </div>
                             <div id="analysisResultsContainer" class="card-body" style="display: none;">
                                 <!-- Analysis results will be injected here -->
@@ -643,7 +641,7 @@
         // --- GOOGLE SHEETS API CONFIG ---
         const SHEET_ID = '1vspz2WTr1oOPoG6zyFl18tFdi3gbM8-bJfeCui6y4PM'; 
         const SHEET_NAME = 'DADOS-LOTOGEN';
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzh60Z7EQ5_oaMN1jkGsHXh0D9UIJvWz82lln3s_kCqSDXCOkCHMcRXpm--tWoTvIwVyQ/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYyY5-Z4J-V9e_fP5-c8D0gS5fT2Xn9hH2bK6fV4b8nK_j8J_c9v9G-x/exec';
         const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
 
         // --- API & DATA HANDLING ---
@@ -665,20 +663,29 @@
                 
                 // Converte o formato da planilha para o formato do antigo db.json
                 const formattedDb = {};
-                data.table.rows.forEach(row => {
-                    const game = row.c[0].v;
-                    const contestData = JSON.parse(row.c[2].v); // A coluna C (índice 2) contém o JSON do concurso
-                    if (!formattedDb[game]) {
-                        formattedDb[game] = [];
-                    }
-                    formattedDb[game].push(contestData);
-                });
+                if (data.table.rows) {
+                    data.table.rows.forEach(row => {
+                        // Verifica se as células esperadas existem
+                        if (row.c && row.c[0] && row.c[2] && row.c[0].v && row.c[2].v) {
+                            const game = row.c[0].v;
+                            try {
+                                const contestData = JSON.parse(row.c[2].v); 
+                                if (!formattedDb[game]) {
+                                    formattedDb[game] = [];
+                                }
+                                formattedDb[game].push(contestData);
+                            } catch (e) {
+                                console.warn(`Falha ao analisar o JSON para o jogo ${game}:`, row.c[2].v);
+                            }
+                        }
+                    });
+                }
 
                 sheetDatabaseCache = formattedDb;
                 return sheetDatabaseCache;
             } catch (error) {
                 console.error('Falha ao carregar ou processar dados do Google Sheet:', error);
-                showError("Não foi possível carregar os dados dos concursos da planilha. Verifique a configuração e a conexão.");
+                showError("Não foi possível carregar os dados dos concursos. Verifique se a planilha está compartilhada como 'Qualquer pessoa com o link pode ver'.");
                 return null;
             }
         }
@@ -721,6 +728,8 @@
         }
 
         async function fetchApiData(url) {
+            // Esta função agora é usada apenas para os dados dos próximos concursos, que é uma chamada única.
+            // O proxy é mantido aqui para essa finalidade específica.
             const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
             const response = await fetch(proxyUrl);
             if (!response.ok) throw new Error('A resposta da rede não foi OK.');
@@ -2077,7 +2086,7 @@
             try {
                 const contests = await getContestsForAnalysisFromSheetDB(gameMode, count);
                 if (contests.length === 0) {
-                    showError(`Nenhum concurso de ${config.displayName} encontrado na base de dados local. Tente atualizar os dados.`);
+                    showError(`Nenhum concurso de ${config.displayName} encontrado na base de dados. Tente atualizar os dados.`);
                     analysisLoadingSpinner.style.display = 'none';
                     return;
                 }
@@ -2129,56 +2138,160 @@
                 analysisLoadingSpinner.style.display = 'none';
             }
         }
-
-        // --- NEW/MODIFIED FUNCTIONS ---
-
+        
+        // --- CORRECTED FUNCTION ---
         async function handleUpdateSheetClick() {
-    const button = document.getElementById('updateSheetBtn');
-    const spinner = button.querySelector('.spinner-border');
-    const icon = button.querySelector('.fa-sync-alt');
+            const button = document.getElementById('updateSheetBtn');
+            const spinner = button.querySelector('.spinner-border');
+            const icon = button.querySelector('.fa-sync-alt');
 
-    if (!SCRIPT_URL || SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbzh60Z7EQ5_oaMN1jkGsHXh0D9UIJvWz82lln3s_kCqSDXCOkCHMcRXpm--tWoTvIwVyQ/exec')) {
-        showError("A URL do Script do Google Apps não foi configurada. Atualize a variável SCRIPT_URL no código.");
-        return;
-    }
+            if (!SCRIPT_URL || SCRIPT_URL.includes('COLE_A_URL')) {
+                showError("A URL do Script do Google Apps não foi configurada. Atualize a variável SCRIPT_URL no código.");
+                return;
+            }
 
-    button.disabled = true;
-    spinner.classList.remove('d-none');
-    icon.classList.add('d-none');
-    hideError();
+            button.disabled = true;
+            spinner.classList.remove('d-none');
+            icon.classList.add('d-none');
+            hideError();
 
-    try {
-        const apiName = lotteryConfigs[state.currentGameMode].apiName;
+            try {
+                const apiName = lotteryConfigs[state.currentGameMode].apiName;
 
-        // Envia um comando simples para o Apps Script
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'cors',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, // Tipo de conteúdo diferente para Apps Script
-            body: JSON.stringify({
-                action: 'updateFromApi', // A nova ação que o script vai entender
-                game: apiName
-            })
-        });
+                // Envia um comando para o Apps Script buscar os dados da API da Caixa
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    // O corpo é enviado como texto puro para ser lido por e.postData.contents no Apps Script.
+                    // Isso evita problemas de 'preflight' do CORS que podem ocorrer com 'application/json'.
+                    headers: {
+                        'Content-Type': 'text/plain',
+                    },
+                    body: JSON.stringify({
+                        action: 'updateFromApi',
+                        game: apiName
+                    })
+                });
 
-        if (!response.ok) throw new Error('Falha na comunicação com a planilha.');
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Falha na comunicação com a planilha: ${response.status} ${response.statusText}. Detalhes: ${errorText}`);
+                }
+                
+                const result = await response.json();
+                if (result.status !== 'success') {
+                    throw new Error(result.message || 'Erro retornado pelo script do Google.');
+                }
+                
+                // Invalida o cache para forçar a releitura dos novos dados e mostra a mensagem de sucesso
+                sheetDatabaseCache = null;
+                alert(result.message);
+                
+            } catch (error) {
+                console.error("Erro ao solicitar atualização da planilha:", error);
+                showError(`Erro ao atualizar: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                spinner.classList.add('d-none');
+                icon.classList.remove('d-none');
+            }
+        }
 
-        const result = await response.json();
-        if(result.status !== 'success') throw new Error(result.message || 'Erro retornado pelo script do Google.');
+        async function fetchLatestResults() {
+            const container = document.getElementById('latestResultsContainer');
+            container.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div><p class="mt-2">Carregando informações...</p></div>';
+            
+            const db = await fetchSheetDatabase();
+            if (!db) {
+                container.innerHTML = `<div class="alert alert-warning">Não foi possível carregar os dados da planilha. Tente atualizar a página.</div>`;
+                return;
+            }
+            
+            container.innerHTML = '';
+            const accordion = document.createElement('div');
+            accordion.className = 'accordion';
+            accordion.id = 'latestResultsAccordion';
+            
+            Object.values(lotteryConfigs).forEach(config => {
+                const gameMode = config.apiName;
+                const gameData = db[gameMode] || [];
+                if (gameData.length > 0) {
+                    const latest = gameData.reduce((a, b) => (a.numero > b.numero ? a : b));
+                    const dezenasHtml = latest.dezenas.map(d => `<span class="badge bg-secondary me-1">${d.toString().padStart(2, '0')}</span>`).join(' ');
+                    const trevosHtml = latest.trevosSorteados && latest.trevosSorteados.length > 0 ? `<br><small><strong>Trevos:</strong> ${latest.trevosSorteados.join(', ')}</small>` : '';
+                    const timeHtml = latest.timeCoracaoMesSorte && config.hasTeam ? `<br><small><strong>Time:</strong> ${latest.timeCoracaoMesSorte}</small>` : '';
+                    const mesHtml = latest.mesSorte && config.hasMonth ? `<br><small><strong>Mês:</strong> ${latest.mesSorte}</small>` : '';
 
-        // Invalida o cache para forçar a releitura dos novos dados e mostra a mensagem de sucesso
-        sheetDatabaseCache = null;
-        alert(result.message);
+                     const item = `
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${gameMode}">
+                                    <strong style="color: ${config.color};">${config.displayName}</strong>&nbsp;- Concurso #${latest.numero} (${latest.dataApuracao})
+                                </button>
+                            </h2>
+                            <div id="collapse-${gameMode}" class="accordion-collapse collapse" data-bs-parent="#latestResultsAccordion">
+                                <div class="accordion-body">
+                                    ${dezenasHtml}
+                                    ${trevosHtml}
+                                    ${timeHtml}
+                                    ${mesHtml}
+                                </div>
+                            </div>
+                        </div>`;
+                    accordion.innerHTML += item;
+                }
+            });
+            container.appendChild(accordion);
+        }
 
-    } catch (error) {
-        console.error("Erro ao solicitar atualização da planilha:", error);
-        showError(`Erro ao atualizar: ${error.message}`);
-    } finally {
-        button.disabled = false;
-        spinner.classList.add('d-none');
-        icon.classList.remove('d-none');
-    }
-}
+        async function fetchUpcomingContests() {
+            const container = document.getElementById('upcomingContestsContainer');
+            try {
+                const data = await fetchApiData('https://servicebus2.caixa.gov.br/portaldeloterias/api/home/ultimos-resultados');
+                let html = '<div class="row">';
+                for (const gameMode in lotteryConfigs) {
+                    const config = lotteryConfigs[gameMode];
+                    // A API da caixa usa um nome diferente para maismilionaria na home
+                    const apiGameName = config.apiName === 'maismilionaria' ? 'maisMilionaria' : config.apiName;
+                    const gameData = data[apiGameName];
+
+                    if(gameData && gameData.numeroProximoConcurso) {
+                        const nextDrawDate = gameData.dataProximoConcurso;
+                        const prizeEstimate = gameData.valorEstimadoProximoConcurso.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                        html += `
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100" style="border-left: 4px solid ${config.color};">
+                                <div class="card-body">
+                                    <h5 class="card-title">${config.displayName}</h5>
+                                    <p class="card-text mb-1"><strong>Próximo Concurso:</strong> #${gameData.numeroProximoConcurso}</p>
+                                    <p class="card-text mb-1"><strong>Data:</strong> ${nextDrawDate}</p>
+                                    <p class="card-text mb-0"><strong>Prêmio Estimado:</strong> <span class="fw-bold">${prizeEstimate}</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }
+                }
+                html += '</div>';
+                container.innerHTML = html;
+            } catch (error) {
+                console.error("Erro ao buscar próximos concursos:", error);
+                container.innerHTML = '<div class="alert alert-danger">Não foi possível carregar as informações dos próximos concursos.</div>';
+            }
+        }
+
+        function handleUseSuggestionClick(e) {
+            if (!e.target.classList.contains('use-suggestion-btn')) return;
+            
+            const numbersStr = e.target.dataset.suggestion;
+            const numbers = numbersStr.split(',').map(n => parseInt(n));
+            const config = lotteryConfigs[state.currentGameMode];
+
+            if (config.isColumnar) {
+                showError("Sugestões não são aplicáveis para o Super Sete.");
+                return;
+            }
+
             // Go to generator tab
             const generatorTab = new bootstrap.Tab(document.getElementById('generator-tab'));
             generatorTab.show();
@@ -2288,3 +2401,4 @@
     </script>
 </body>
 </html>
+
