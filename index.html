@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR" data-bs-theme="dark">
 <head>
@@ -438,15 +437,23 @@
                                 <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Análise de Frequência: <span class="gameNameHeader"></span></h4>
                             </div>
                             <div class="card-body" id="analysisCardBody">
-                                <div class="row align-items-end">
-                                    <div class="col-md-6">
+                                <!-- MODIFICATION START: Added update button and adjusted layout -->
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-5">
                                         <label for="contestCountInput" class="form-label">Analisar os últimos concursos:</label>
                                         <input type="number" class="form-control" id="contestCountInput" value="100" min="10" max="5000">
                                     </div>
-                                    <div class="col-md-6 d-grid">
-                                        <button id="runAnalysisBtn" class="btn btn-warning mt-3 mt-md-0"><i class="fas fa-cogs me-2"></i>Analisar Concursos</button>
+                                    <div class="col-md-4 d-grid">
+                                        <button id="runAnalysisBtn" class="btn btn-warning"><i class="fas fa-cogs me-2"></i>Analisar Concursos</button>
+                                    </div>
+                                    <div class="col-md-3 d-grid">
+                                        <button id="updateSheetBtn" class="btn btn-outline-success">
+                                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                            <i class="fas fa-sync-alt me-1"></i> Atualizar Dados
+                                        </button>
                                     </div>
                                 </div>
+                                <!-- MODIFICATION END -->
                             </div>
                             <div id="analysisResultsContainer" class="card-body" style="display: none;">
                                 <!-- Analysis results will be injected here -->
@@ -597,1610 +604,1807 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Custom JS -->
-    <!DOCTYPE html>
-<html lang="pt-BR" data-bs-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador e Analisador de Loterias</title>
-    
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-    <style>
-        /* CSS Variables for dynamic theming */
-        :root {
-            --primary-color: #0d6efd;
-            --primary-hover-color: #0b5ed7;
-        }
-
-        body {
-            background-color: #0f2021;
-        }
-
-        .card-header, .btn-primary {
-            background-color: var(--primary-color) !important;
-            border-color: var(--primary-color) !important;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--primary-hover-color) !important;
-            border-color: var(--primary-hover-color) !important;
-        }
-        
-        .btn-outline-primary {
-            color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        .btn-outline-primary:hover, .btn-check:checked+.btn-outline-primary, .number-btn.active {
-            color: #fff;
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        .number-btn {
-            font-weight: 600;
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            border-radius: 50%;
-            position: relative;
-        }
-
-        .number-btn:hover {
-            transform: scale(1.1);
-            z-index: 1;
-        }
-        
-        .btn-fixed {
-            background-color: #198754 !important; /* Bootstrap success green */
-            border-color: #146c43 !important;
-            color: white !important;
-        }
-
-        .btn-fixed .fa-thumbtack {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            font-size: 0.6em;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .selected-numbers {
-            min-height: 60px;
-            padding: 10px;
-            background-color: #212529;
-            border-radius: 8px;
-        }
-        
-        #selectionCardBody, #analysisCardBody {
-            background-color: #091d1f; /* Lighter background for selection area */
-        }
-
-        #numberGridContainer {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
-            gap: 0.5rem;
-        }
-
-        .table-responsive {
-            max-height: 500px;
-            overflow-y: auto;
-        }
-
-        .card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn {
-            transition: all 0.3s ease;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .text-bronze {
-            color: #cd7f32 !important;
-        }
-
-        /* Super Sete Styles */
-        #superSeteGridContainer {
-            display: flex;
-            justify-content: space-around;
-            gap: 10px;
-        }
-        .super-sete-column {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
-        .super-sete-column .number-btn {
-            width: 35px;
-            height: 35px;
-            font-size: 0.9rem;
-            border-radius: 8px;
-        }
-        .nav-tabs .nav-link {
-            color: #ccc;
-        }
-        .nav-tabs .nav-link.active {
-            color: #fff;
-            background-color: #141317;
-            border-color: #454d55 #454d55 #343a40;
-        }
-        .nav-tabs .nav-link:hover {
-            border-color: #454d55;
-        }
-        .suggestion-numbers {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 10px;
-        }
-        #copyNotification {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1050;
-            transition: opacity 0.5s ease-in-out;
-        }
-        
-        /* Novos estilos adicionados */
-        .hot-number {
-            box-shadow: 0 0 8px 2px rgba(255, 50, 50, 0.7) !important;
-            animation: pulse-hot 2s infinite;
-        }
-
-        .cold-number {
-            box-shadow: 0 0 8px 2px rgba(50, 150, 255, 0.7) !important;
-            animation: pulse-cold 2s infinite;
-        }
-
-        @keyframes pulse-hot {
-            0% { box-shadow: 0 0 8px 2px rgba(255, 50, 50, 0.7); }
-            50% { box-shadow: 0 0 12px 4px rgba(255, 50, 50, 0.9); }
-            100% { box-shadow: 0 0 8px 2px rgba(255, 50, 50, 0.7); }
-        }
-
-        @keyframes pulse-cold {
-            0% { box-shadow: 0 0 8px 2px rgba(50, 150, 255, 0.7); }
-            50% { box-shadow: 0 0 12px 4px rgba(50, 150, 255, 0.9); }
-            100% { box-shadow: 0 0 8px 2px rgba(50, 150, 255, 0.7); }
-        }
-        
-        .number-btn, .card, .btn {
-            transition: all 0.3s ease;
-        }
-
-        .selected-numbers, #resultsSection {
-            transition: opacity 0.4s ease, transform 0.4s ease;
-        }
-        
-        /* Accordion custom color */
-        .accordion-button:not(.collapsed) {
-            color: var(--bs-accordion-active-color);
-            background-color: var(--bs-accordion-active-bg);
-            box-shadow: inset 0 calc(-1 * var(--bs-accordion-border-width)) 0 var(--bs-accordion-border-color);
-        }
-
-        /* Novos estilos para análise de balanceamento */
-        .balance-analysis-card {
-            border-left: 4px solid #6f42c1;
-        }
-        .balance-progress {
-            height: 1.5rem;
-            font-weight: bold;
-        }
-        .balance-indicator {
-            font-size: 0.85rem;
-            padding: 0.3rem 0.6rem;
-            border-radius: 0.5rem;
-        }
-        .balance-good {
-            background-color: #198754;
-            color: white;
-        }
-        .balance-fair {
-            background-color: #ffc107;
-            color: black;
-        }
-        .balance-poor {
-            background-color: #dc3545;
-            color: white;
-        }
-    </style>
-</head>
-
-<body>
-    <header class="bg-dark shadow-sm pb-2">
-        <div class="container">
-            <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
-                <a class="navbar-brand d-flex align-items-center mb-2 mb-lg-0 me-lg-auto text-white text-decoration-none" href="#">
-                    <i class="fas fa-ticket-alt me-2"></i> Gerador & Analisador
-                </a>
-
-                <div class="ms-lg-3">
-                    <select id="gameModeSelect" class="form-select bg-dark text-white">
-                        <option value="lotofacil">Lotofácil</option>
-                        <option value="megasena">Mega-Sena</option>
-                        <option value="maismilionaria">Mais Milionária</option>
-                        <option value="quina">Quina</option>
-                        <option value="lotomania">Lotomania</option>
-                        <option value="timemania">Timemania</option>
-                        <option value="duplasena">Dupla Sena</option>
-                        <option value="diadesorte">Dia de Sorte</option>
-                        <option value="supersete">Super Sete</option>
-                    </select>
-                </div>
-                <div class="ms-2">
-                    <button id="resetAllBtn" class="btn btn-outline-warning">
-                        <i class="fas fa-redo me-1"></i> Limpar Tudo
-                    </button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <div class="container mt-4">
-        <ul class="nav nav-tabs" id="mainTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="generator-tab" data-bs-toggle="tab" data-bs-target="#generator-tab-pane" type="button" role="tab"><i class="fas fa-random me-1"></i> Gerador</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="analysis-tab" data-bs-toggle="tab" data-bs-target="#analysis-tab-pane" type="button" role="tab"><i class="fas fa-chart-bar me-1"></i> Análise</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="latest-results-tab" data-bs-toggle="tab" data-bs-target="#latest-results-tab-pane" type="button" role="tab"><i class="fas fa-award me-1"></i> Últimos Resultados</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming-tab-pane" type="button" role="tab"><i class="fas fa-calendar-alt me-1"></i> Próximos Concursos</button>
-            </li>
-        </ul>
-
-        <div class="tab-content" id="mainTabContent">
-                        <div class="tab-pane fade show active" id="generator-tab-pane" role="tabpanel">
-                <div class="row mt-3">
-                    <div class="col-lg-8 mx-auto">
-                        <div class="card">
-                            <div class="card-header text-white">
-                                <h4 class="mb-0"><i class="fas fa-random me-2"></i>Gerador de Apostas: <span class="gameNameHeader"></span></h4>
-                            </div>
-                            <div class="card-body" id="selectionCardBody">
-                                <div id="rulesAlert" class="alert alert-info" role="alert"></div>
-                                <div id="specialSelectionContainer" class="mb-3"></div>
-                                <div class="mb-4">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h5 id="selectionHeader" class="mb-0"><i class="fas fa-th me-2"></i>Selecione seus números</h5>
-                                    </div>
-                                    <div id="numberGridContainer" class="number-grid"></div>
-                                    <div id="superSeteGridContainer" class="d-none"></div>
-                                    <div class="d-flex justify-content-end mt-3">
-                                        <button id="clearBtn" class="btn btn-outline-danger"><i class="fas fa-trash-alt me-1"></i> Limpar Seleção</button>
-                                        <button id="selectAllBtn" class="btn btn-outline-secondary ms-2">
-                                            <i class="fas fa-check-square me-1"></i> Selecionar Tudo
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="selected-numbers mb-4">
-                                    <h5><i class="fas fa-check-circle me-2"></i>Números Selecionados</h5>
-                                    <div id="selectedNumbersList" class="d-flex flex-wrap align-items-center gap-1">
-                                        <span class="text-muted">Nenhum número selecionado</span>
-                                    </div>
-                                </div>
-                                <div id="generationModeContainer" class="mb-4">
-                                    <h5><i class="fas fa-cogs me-2"></i>Modo de Geração</h5>
-                                    <div class="btn-group w-100" role="group">
-                                        <input type="radio" class="btn-check" name="generationMode" id="modeFechamento" value="fechamento" autocomplete="off" checked>
-                                        <label class="btn btn-outline-secondary" for="modeFechamento">Fechamento Completo</label>
-                                        <input type="radio" class="btn-check" name="generationMode" id="modeFixo" value="fixo" autocomplete="off">
-                                        <label class="btn btn-outline-secondary" for="modeFixo">Com Dezenas Fixas</label>
-                                    </div>
-                                    <div id="fixedNumbersInfo" class="form-text mt-2 d-none">
-                                        Clique uma vez em um número para selecionar. Clique uma segunda vez para fixá-lo (verde). Um terceiro clique desmarca.
-                                    </div>
-                                </div>
-                                <div class="d-grid gap-2">
-                                    <button id="generateBtn" class="btn btn-primary btn-lg"><i class="fas fa-cogs me-2"></i>Gerar Combinações</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="resultsSection" class="card mt-4 d-none">
-                            <div class="card-header bg-success text-white">
-                                <h4 class="mb-0"><i class="fas fa-list-ol me-2"></i>Combinações Geradas</h4>
-                            </div>
-                            <div class="card-body">
-                                <div class="alert alert-light mb-4">
-                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                        <div>
-                                            <h5 class="mb-1">Resumo</h5>
-                                            <p class="mb-0" id="totalCombinations"></p>
-                                            <p class="mb-0" id="totalCost"></p>
-                                        </div>
-                                        <div class="d-flex gap-2">
-                                            <button class="btn btn-outline-info" id="copyGamesBtn"><i class="fas fa-copy me-1"></i> Copiar Jogos</button>
-                                            <div class="dropdown">
-                                                <button class="btn btn-outline-success dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown"><i class="fas fa-download me-1"></i> Exportar</button>
-                                                <ul class="dropdown-menu">
-                                                    <li><a class="dropdown-item" href="#" id="exportCsv">CSV</a></li>
-                                                    <li><a class="dropdown-item" href="#" id="exportTxt">TXT</a></li>
-                                                    <li><a class="dropdown-item" href="#" id="exportPdf">PDF (Volantes)</a></li>
-                                                    <li><a class="dropdown-item" href="#" id="exportPng">PNG (Imagem)</a></li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                                                <div id="balanceAnalysis" class="card mb-4 balance-analysis-card d-none">
-                                    <div class="card-header bg-purple text-white">
-                                        <h5 class="mb-0"><i class="fas fa-balance-scale me-2"></i>Análise de Balanceamento</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6 mb-3">
-                                                <h6>Pares vs Ímpares</h6>
-                                                <div id="evenOddAnalysis" class="mb-3"></div>
-                                                <div class="progress balance-progress mb-2">
-                                                    <div id="evenProgress" class="progress-bar bg-success" role="progressbar"></div>
-                                                    <div id="oddProgress" class="progress-bar bg-info" role="progressbar"></div>
-                                                </div>
-                                                <div class="d-flex justify-content-between">
-                                                    <span id="evenPercent" class="balance-indicator balance-good">0% Pares</span>
-                                                    <span id="oddPercent" class="balance-indicator balance-good">0% Ímpares</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6 mb-3">
-                                                <h6>Baixos vs Altos</h6>
-                                                <div id="lowHighAnalysis" class="mb-3"></div>
-                                                <div class="progress balance-progress mb-2">
-                                                    <div id="lowProgress" class="progress-bar bg-warning" role="progressbar"></div>
-                                                    <div id="highProgress" class="progress-bar bg-danger" role="progressbar"></div>
-                                                </div>
-                                                <div class="d-flex justify-content-between">
-                                                    <span id="lowPercent" class="balance-indicator balance-good">0% Baixos</span>
-                                                    <span id="highPercent" class="balance-indicator balance-good">0% Altos</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="mt-3" id="balanceRecommendations"></div>
-                                    </div>
-                                </div>
-                                
-                                <div class="table-responsive">
-                                    <table class="table table-striped table-hover">
-                                        <thead><tr><th>#</th><th>Números</th></tr></thead>
-                                        <tbody id="combinationsTable"></tbody>
-                                    </table>
-                                </div>
-                                <div id="checkHistoryBtnContainer" class="d-flex flex-wrap gap-2 mt-3 d-none">
-                                    <button id="checkHistoryBtn" class="btn btn-outline-warning flex-grow-1" data-bs-toggle="modal" data-bs-target="#historyModal"><i class="fas fa-history me-2"></i> Analisar por Concurso</button>
-                                    <button id="checkRangeHistoryBtn" class="btn btn-outline-info flex-grow-1" data-bs-toggle="modal" data-bs-target="#rangeHistoryModal"><i class="fas fa-search-plus me-2"></i> Analisar entre Concursos</button>
-                                </div>
-                            </div>
-                            <div id="resultCheckerSection" class="card-footer d-none">
-                                <h5 class="mb-3"><i class="fas fa-check-double me-2"></i>Conferir Resultado Manualmente</h5>
-                                <div class="mb-3">
-                                    <label for="drawnNumbersInput" class="form-label">Digite os números sorteados (separados por vírgula ou espaço):</label>
-                                    <input type="text" class="form-control" id="drawnNumbersInput" placeholder="Ex: 1, 2, 3, 4, 5, 6">
-                                </div>
-                                <div id="specialCheckerContainer" class="mb-3 d-none"></div>
-                                <button id="checkResultsBtn" class="btn btn-success"><i class="fas fa-search me-1"></i> Conferir</button>
-                                <div id="prizeSummary" class="mt-3 d-none">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6><i class="fas fa-trophy me-1"></i> Resumo da Premiação</h6>
-                                            <ul id="prizeList" class="list-group"></ul>
-                                        </div>
-                                        <div class="col-md-6 mt-3 mt-md-0">
-                                            <h6><i class="fas fa-dollar-sign me-1"></i> Análise Financeira</h6>
-                                            <ul id="financialSummaryList" class="list-group"></ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-                        <div class="tab-pane fade" id="analysis-tab-pane" role="tabpanel">
-                 <div class="row mt-3">
-                    <div class="col-lg-8 mx-auto">
-                        <div class="card">
-                             <div class="card-header text-white">
-                                <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Análise de Frequência: <span class="gameNameHeader"></span></h4>
-                            </div>
-                            <div class="card-body" id="analysisCardBody">
-                                <div class="row g-3 align-items-end">
-                                    <div class="col-md-5">
-                                        <label for="contestCountInput" class="form-label">Analisar os últimos concursos:</label>
-                                        <input type="number" class="form-control" id="contestCountInput" value="100" min="10" max="5000">
-                                    </div>
-                                    <div class="col-md-4 d-grid">
-                                        <button id="runAnalysisBtn" class="btn btn-warning"><i class="fas fa-cogs me-2"></i>Analisar Concursos</button>
-                                    </div>
-                                    <div class="col-md-3 d-grid">
-                                        <button id="updateSheetBtn" class="btn btn-outline-success">
-                                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
-                                            <i class="fas fa-sync-alt me-1"></i> Atualizar Dados
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="analysisResultsContainer" class="card-body" style="display: none;">
-                                                            </div>
-                            <div id="analysisLoadingSpinner" class="card-body text-center" style="display: none;">
-                                <div class="spinner-border text-warning" role="status"></div>
-                                <p class="mt-2">Buscando e analisando dados... Isso pode levar um momento.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-                        <div class="tab-pane fade" id="latest-results-tab-pane" role="tabpanel">
-                <div class="row mt-3">
-                    <div class="col-lg-8 mx-auto">
-                        <div class="card">
-                            <div class="card-header text-white">
-                                <h4 class="mb-0"><i class="fas fa-award me-2"></i>Últimos Resultados Sorteados</h4>
-                            </div>
-                            <div class="card-body" id="latestResultsContainer">
-                                <div class="text-center">
-                                    <div class="spinner-border text-primary" role="status">
-                                        <span class="visually-hidden">Carregando...</span>
-                                    </div>
-                                    <p class="mt-2">Carregando informações...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-                        <div class="tab-pane fade" id="upcoming-tab-pane" role="tabpanel">
-                <div class="row mt-3">
-                    <div class="col-lg-8 mx-auto">
-                        <div class="card">
-                            <div class="card-header text-white">
-                                <h4 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Informações dos Próximos Concursos</h4>
-                            </div>
-                            <div class="card-body" id="upcomingContestsContainer">
-                                                                <div class="text-center">
-                                    <div class="spinner-border text-primary" role="status">
-                                        <span class="visually-hidden">Carregando...</span>
-                                    </div>
-                                    <p class="mt-2">Carregando informações...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-                <div class="row mt-3">
-            <div class="col-lg-8 mx-auto">
-                <div id="loadingSpinner" class="text-center my-5 d-none">
-                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                        <span class="visually-hidden">Carregando...</span>
-                    </div>
-                    <p class="mt-2 fs-5">Gerando combinações...</p>
-                </div>
-                <div id="errorAlert" class="alert alert-danger mt-4 d-none" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <span id="errorMessage"></span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-        <div class="modal fade" id="historyModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-history me-2"></i>Análise por Concurso</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Digite o número de um concurso anterior ou busque o mais recente para verificar o desempenho das suas apostas.</p>
-                    <div class="input-group mb-3">
-                        <input type="number" id="contestNumberInput" class="form-control" placeholder="Número do concurso">
-                        <button class="btn btn-outline-secondary" type="button" id="fetchLatestContestBtn">
-                            <span class="spinner-border spinner-border-sm d-none" role="status"></span> Buscar Último
-                        </button>
-                    </div>
-                     <div class="d-grid">
-                        <button class="btn btn-warning" type="button" id="analyzeContestBtn">
-                            <i class="fas fa-search me-1"></i> Analisar Concurso
-                        </button>
-                    </div>
-                    <div id="historyAnalysisResult" class="mt-4 d-none"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="rangeHistoryModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-search-plus me-2"></i>Análise entre Concursos</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Digite o intervalo de concursos (inicial e final) para verificar o desempenho das suas apostas.</p>
-                    <div class="row g-3 align-items-center">
-                        <div class="col-md-5">
-                            <input type="number" id="startContestInput" class="form-control" placeholder="Concurso Inicial">
-                        </div>
-                        <div class="col-md-5">
-                            <input type="number" id="endContestInput" class="form-control" placeholder="Concurso Final">
-                        </div>
-                        <div class="col-md-2 d-grid">
-                            <button class="btn btn-info" type="button" id="analyzeRangeBtn">
-                                <i class="fas fa-play me-1"></i> Analisar
-                            </button>
-                        </div>
-                    </div>
-                    <div id="rangeHistoryAnalysisResult" class="mt-4 d-none"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-        <div id="copyNotification" class="alert alert-success d-none" role="alert">
-        <i class="fas fa-check-circle me-2"></i> Jogos copiados para a área de transferência!
-    </div>
-
-    <footer class="bg-dark text-light mt-5 py-4">
-        <div class="container text-center">
-            <p class="small mb-1">
-                Esta é uma ferramenta de apoio e não garante prêmios. Jogue com responsabilidade.
-            </p>
-            <p class="small text-muted mb-0">
-                Valores de prêmios são estimativas e podem variar.
-            </p>
-        </div>
-    </footer>
-
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // --- CONFIGS ---
-            const lotteryConfigs = {
-                lotofacil: {
-                    displayName: "Lotofácil", apiName: "lotofacil", fallbackSlug: 'lotofacil', totalNumbers: 25, betSize: 15, minSelection: 15, maxSelection: 20, cost: 3.00, color: '#930089', hoverColor: '#7a0070', pdfGridCols: 5, prizeTiers: [15, 14, 13, 12, 11], prizeValues: { 11: 6.00, 12: 12.00, 13: 30.00, 14: 1500.00, 15: 1700000.00 }
-                },
-                megasena: {
-                    displayName: "Mega-Sena", apiName: "megasena", fallbackSlug: 'mega-sena', totalNumbers: 60, betSize: 6, minSelection: 6, maxSelection: 20, cost: 5.00, color: '#209869', hoverColor: '#197c56', pdfGridCols: 10, prizeTiers: [6, 5, 4], prizeValues: { 4: 900.00, 5: 45000.00, 6: 30000000.00 }
-                },
-                maismilionaria: {
-                    displayName: "Mais Milionária", apiName: "maismilionaria", fallbackSlug: 'mais-milionaria', totalNumbers: 50, betSize: 6, minSelection: 6, maxSelection: 12, cost: 6.00, color: '#007bff', hoverColor: '#0056b3', pdfGridCols: 10, hasTrevos: true, trevoSize: 2, prizeTiers: ['6+2', '6+1', '5+2', '5+1', '4+2', '4+1', '3+2', '3+1', '2+2', '2+1'], prizeValues: { '6+2': 10000000, '6+1': 500000, '5+2': 50000, '5+1': 1000, '4+2': 1000, '4+1': 100, '3+2': 50, '3+1': 24, '2+2': 12, '2+1': 6 }
-                },
-                quina: {
-                    displayName: "Quina", apiName: "quina", fallbackSlug: 'quina', totalNumbers: 80, betSize: 5, minSelection: 5, maxSelection: 15, cost: 2.50, color: '#260085', hoverColor: '#1e006a', pdfGridCols: 10, prizeTiers: [5, 4, 3, 2], prizeValues: { 2: 4.00, 3: 150.00, 4: 7000.00, 5: 1500000.00 }
-                },
-                lotomania: {
-          _```html
-                },
-                timemania: {
-                    displayName: "Timemania", apiName: "timemania", fallbackSlug: 'timemania', totalNumbers: 80, betSize: 10, minSelection: 10, maxSelection: 10, cost: 3.50, color: '#008000', hoverColor: '#005300', pdfGridCols: 10, hasTeam: true, prizeTiers: [7, 6, 5, 4, 3], prizeValues: { 3: 5.00, 4: 10.00, 5: 25.00, 6: 1000.00, 7: 25000.00, "team": 8.50 }
-                },
-                duplasena: {
-                    displayName: "Dupla Sena", apiName: "duplasena", fallbackSlug: 'dupla-sena', totalNumbers: 50, betSize: 6, minSelection: 6, maxSelection: 15, cost: 2.50, color: '#a50000', hoverColor: '#7d0000', pdfGridCols: 10, prizeTiers: [6, 5, 4, 3], prizeValues: { 3: 2.50, 4: 100.00, 5: 4000.00, 6: 200000.00 }
-                },
-                diadesorte: {
-                    displayName: "Dia de Sorte", apiName: "diadesorte", fallbackSlug: 'dia-de-sorte', totalNumbers: 31, betSize: 7, minSelection: 7, maxSelection: 15, cost: 2.50, color: '#f8a700', hoverColor: '#c58400', pdfGridCols: 7, hasMonth: true, prizeTiers: [7, 6, 5, 4], prizeValues: { 4: 5.00, 5: 25.00, 6: 2000.00, 7: 300000.00, "month": 2.50 }
-                },
-                supersete: {
-                    displayName: "Super Sete", apiName: "supersete", fallbackSlug: 'super-sete', totalNumbers: 10, betSize: 7, minSelection: 7, maxSelection: 21, cost: 2.50, color: '#8a2be2', hoverColor: '#6921b2', isColumnar: true, prizeTiers: [7, 6, 5, 4, 3], prizeValues: { 3: 5.00, 4: 50.00, 5: 1000.00, 6: 15000.00, 7: 500000.00 }
-                }
-            };
-            const TEAMS = ["ABC/RN", "Altos/PI", "América/MG", "América/RN", "Aparecidense/GO", "Athletico/PR", "Atlético/AC", "Atlético/CE", "Atlético/GO", "Atlético/MG", "Avaí/SC", "Bahia/BA", "Boavista/RJ", "Botafogo/PB", "Botafogo/RJ", "Botafogo/SP", "Bragantino/SP", "Brasil de Pelotas/RS", "Brasiliense/DF", "Brusque/SC", "Campinense/PB", "Caxias/RS", "Ceará/CE", "Chapecoense/SC", "Cianorte/PR", "Confiança/SE", "Corinthians/SP", "Coritiba/PR", "CRB/AL", "Criciúma/SC", "Cruzeiro/MG", "CSA/AL", "Cuiabá/MT", "Ferroviária/SP", "Ferroviário/CE", "Figueirense/SC", "Flamengo/RJ", "Floresta/CE", "Fluminense/RJ", "Fortaleza/CE", "Goiás/GO", "Grêmio/RS", "Guarani/SP", "Imperatriz/MA", "Internacional/RS", "Ituano/SP", "Jacuipense/BA", "Joinville/SC", "Juazeirense/BA", "Juventude/RS", "Londrina/PR", "Luverdense/MT", "Manaus/AM", "Mirassol/SP", "Moto Club/MA", "Náutico/PE", "Novorizontino/SP", "Oeste/SP", "Operário/PR", "Palmeiras/SP", "Paraná/PR", "Paysandu/PA", "Ponte Preta/SP", "Portuguesa/SP", "Remo/PA", "Sampaio Corrêa/MA", "Santa Cruz/PE", "Santo André/SP", "Santos/SP", "São Bento/SP", "São José/RS", "São Paulo/SP", "São Raimundo/RR", "Sport/PE", "Tombense/MG", "Treze/PB", "Vasco/RJ", "Vila Nova/GO", "Vitória/BA", "Volta Redonda/RJ", "Ypiranga/RS"];
-            const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-            const MAX_COMBINATIONS = 50000;
-
-            // --- GOOGLE SHEETS API CONFIG ---
-            const SHEET_ID = 'COLE_SEU_SHEET_ID_AQUI'; 
-            const SHEET_NAME = 'COLE_O_NOME_DA_SUA_ABA_AQUI';
-            const SCRIPT_URL = 'COLE_A_URL_DO_SEU_SCRIPT_WEB_APP_AQUI';
-            const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
-
-            // --- API & DATA HANDLING ---
-            let sheetDatabaseCache = null;
-
-            async function fetchSheetDatabase() {
-                if (sheetDatabaseCache) {
-                    return sheetDatabaseCache;
-                }
-                try {
-                    const response = await fetch(GVIZ_URL);
-                    if (!response.ok) {
-                        throw new Error('A resposta da rede para o Google Sheet não foi OK');
-                    }
-                    const text = await response.text();
-                    // Extrai o JSON da resposta da Google Visualization API
-                    const jsonString = text.match(/google\.visualization\.Query\.setResponse\((.*)\)/s)[1];
-                    const data = JSON.parse(jsonString);
-                    
-                    // Converte o formato da planilha para o formato do antigo db.json
-                    const formattedDb = {};
-                    data.table.rows.forEach(row => {
-                        const game = row.c[0].v;
-                        const contestData = JSON.parse(row.c[2].v); // A coluna C (índice 2) contém o JSON do concurso
-                        if (!formattedDb[game]) {
-                            formattedDb[game] = [];
-                        }
-                        formattedDb[game].push(contestData);
-                    });
-
-                    sheetDatabaseCache = formattedDb;
-                    return sheetDatabaseCache;
-                } catch (error) {
-                    console.error('Falha ao carregar ou processar dados do Google Sheet:', error);
-                    showError("Não foi possível carregar os dados dos concursos da planilha. Verifique a configuração e a conexão.");
-                    return null;
-                }
-            }
-
-            async function searchSheetDatabase(gameMode, contestNumber) {
-                const db = await fetchSheetDatabase();
-                if (!db || !db[gameMode]) {
-                    return null;
-                }
-                const contestNum = parseInt(contestNumber, 10);
-                const result = db[gameMode].find(contest => contest.numero === contestNum);
-                return result || null;
-            }
-
-            async function getLatestContestFromSheetDB(gameMode) {
-                const db = await fetchSheetDatabase();
-                if (!db || !db[gameMode] || db[gameMode].length === 0) {
-                    return null;
-                }
-                return db[gameMode].reduce((latest, current) => (current.numero > latest.numero ? current : latest));
-            }
-
-            async function getContestsForAnalysisFromSheetDB(gameMode, count) {
-                const db = await fetchSheetDatabase();
-                if (!db || !db[gameMode] || db[gameMode].length === 0) {
-                    return [];
-                }
-                return db[gameMode]
-                    .sort((a, b) => b.numero - a.numero)
-                    .slice(0, count);
-            }
-            
-            async function getContestsForAnalysisFromSheetDBByRange(gameMode, start, end) {
-                const db = await fetchSheetDatabase();
-                if (!db || !db[gameMode] || db[gameMode].length === 0) {
-                    return [];
-                }
-                return db[gameMode].filter(contest => contest.numero >= start && contest.numero <= end)
-                                    .sort((a, b) => a.numero - b.numero);
-            }
-
-            async function fetchApiData(url) {
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-                const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error('A resposta da rede não foi OK.');
-                return response.json();
-            }
-
-            // --- UI ---
-            function applyThemeColor(color, hoverColor) {
-                document.documentElement.style.setProperty('--primary-color', color);
-                document.documentElement.style.setProperty('--primary-hover-color', hoverColor);
-            }
-
-            function initializeNumberGrid(totalNum, container, clickHandler) {
-                container.innerHTML = '';
-                for (let i = 1; i <= totalNum; i++) {
-                    const button = document.createElement('button');
-                    button.className = 'btn btn-outline-primary number-btn';
-                    button.dataset.number = i;
-                    button.innerHTML = `<span>${i.toString().padStart(2, '0')}</span>`;
-                    button.addEventListener('click', clickHandler);
-                    container.appendChild(button);
-                }
-            }
-
-            function initializeSuperSeteGrid(container, clickHandler) {
-                container.innerHTML = '';
-                for (let col = 0; col < 7; col++) {
-                    const colDiv = document.createElement('div');
-                    colDiv.className = 'super-sete-column';
-                    colDiv.innerHTML = `<h6>Col ${col + 1}</h6>`;
-                    for (let num = 0; num < 10; num++) {
-                        const button = document.createElement('button');
-                        button.className = 'btn btn-outline-primary number-btn';
-                        button.dataset.number = num;
-                        button.dataset.column = col;
-                        button.innerHTML = `<span>${num}</span>`;
-                        button.addEventListener('click', clickHandler);
-                        colDiv.appendChild(button);
-                    }
-                    container.appendChild(colDiv);
-                }
-            }
-
-            function buildSpecialSelectors(config, container, trevoClickHandler) {
-                container.innerHTML = '';
-                if (config.hasTeam) {
-                    let html = `<label for="teamSelect" class="form-label">Time do Coração</label><select id="teamSelect" class="form-select">`;
-                    TEAMS.sort().forEach(team => html += `<option value="${team}">${team}</option>`);
-                    html += `</select>`;
-                    container.innerHTML = html;
-                }
-                if (config.hasMonth) {
-                    let html = `<label for="monthSelect" class="form-label">Mês da Sorte</label><select id="monthSelect" class="form-select">`;
-                    MONTHS.forEach(month => html += `<option value="${month}">${month}</option>`);
-                    html += `</select>`;
-                    container.innerHTML = html;
-                }
-                if (config.hasTrevos) {
-                    let html = `<h5 class="mt-3"><i class="fas fa-clover me-2"></i>Selecione 2 Trevos da Sorte</h5><div class="d-flex gap-2">`;
-                    for (let i = 1; i <= 6; i++) {
-                        html += `<button class="btn btn-outline-success number-btn trevo-btn" data-trevo="${i}">${i}</button>`;
-                    }
-                    html += `</div>`;
-                    container.innerHTML = html;
-                    document.querySelectorAll('.trevo-btn').forEach(btn => btn.addEventListener('click', trevoClickHandler));
-                }
-            }
-
-            function buildSpecialCheckers(config, container) {
-                container.innerHTML = '';
-                container.classList.add('d-none');
-                if (config.hasTrevos) {
-                    container.innerHTML = `<label for="drawnTrevosInput" class="form-label">Digite os trevos sorteados:</label><input type="text" class="form-control" id="drawnTrevosInput" placeholder="Ex: 1, 2">`;
-                    container.classList.remove('d-none');
-                }
-                if (config.hasMonth) {
-                    container.innerHTML = `<label for="drawnMonthInput" class="form-label">Digite o Mês da Sorte:</label><input type="text" class="form-control" id="drawnMonthInput" placeholder="Ex: Janeiro">`;
-                    container.classList.remove('d-none');
-                }
-                if (config.hasTeam) {
-                    container.innerHTML = `<label for="drawnTeamInput" class="form-label">Digite o Time do Coração sorteado:</label><input type="text" class="form-control" id="drawnTeamInput" placeholder="Ex: Flamengo/RJ">`;
-                    container.classList.remove('d-none');
-                }
-            }
-            
-            function updateSelectedNumbersDisplay(selectedNumbers, fixedNumbers, superSeteSelections, selectedTrevos, config) {
-                const selectedNumbersList = document.getElementById('selectedNumbersList');
-                selectedNumbersList.innerHTML = '';
-                
-                let currentSelections = config.isColumnar ? superSeteSelections.flat() : selectedNumbers;
-
-                if (currentSelections.length === 0 && selectedTrevos.length === 0) {
-                    selectedNumbersList.innerHTML = '<span class="text-muted">Nenhum número selecionado</span>';
-                    return;
-                }
-                
-                if (config.isColumnar) {
-                    superSeteSelections.forEach((col, colIndex) => {
-                        if (col.length > 0) {
-                            const badge = document.createElement('span');
-                            badge.className = 'badge bg-secondary me-2 mb-1';
-                            badge.innerHTML = `<strong>Col ${colIndex + 1}:</strong> ${col.join(', ')}`;
-                            selectedNumbersList.appendChild(badge);
-                        }
-                    });
-                } else {
-                    selectedNumbers.forEach(number => {
-                        const isFixed = fixedNumbers.includes(number);
-                        const badge = document.createElement('span');
-                        badge.className = `badge me-1 mb-1 fs-6 ${isFixed ? 'bg-success' : ''}`;
-                        if (!isFixed) badge.style.backgroundColor = config.color;
-                        badge.textContent = number.toString().padStart(2, '0');
-                        if (isFixed) badge.innerHTML += ' <i class="fas fa-thumbtack fa-xs"></i>';
-                        selectedNumbersList.appendChild(badge);
-                    });
-                }
-
-                if (config.hasTrevos && selectedTrevos.length > 0) {
-                    const badge = document.createElement('span');
-                    badge.className = 'badge bg-success me-1 mb-1 fs-6';
-                    badge.innerHTML = `<i class="fas fa-clover"></i> ${selectedTrevos.join(', ')}`;
-                    selectedNumbersList.appendChild(badge);
-                }
-
-                const countBadge = document.createElement('span');
-                countBadge.className = 'badge bg-dark ms-2';
-                countBadge.textContent = `${currentSelections.length} número(s)`;
-                selectedNumbersList.appendChild(countBadge);
-            }
-
-            function displayResults(combinations, totalCostValue, config, fixedNumbers, specialSelections) {
-                document.getElementById('totalCombinations').textContent = `Total de Apostas: ${combinations.length}`;
-                document.getElementById('totalCost').textContent = `Custo Total: ${totalCostValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
-                
-                const combinationsTable = document.getElementById('combinationsTable');
-                combinationsTable.innerHTML = '';
-
-                combinations.forEach((combo, index) => {
-                    const row = document.createElement('tr');
-                    let numbersHtml = combo.map(num => `<span class="badge ${fixedNumbers.includes(num) ? 'bg-success' : 'bg-light text-dark'} me-1 mb-1">${num.toString().padStart(2, '0')}</span>`).join(' ');
-                    
-                    if (config.hasTeam) numbersHtml += ` <span class="badge bg-info">${specialSelections.team}</span>`;
-                    if (config.hasMonth) numbersHtml += ` <span class="badge bg-info">${specialSelections.month}</span>`;
-                    if (config.hasTrevos) numbersHtml += ` <span class="badge bg-success"><i class="fas fa-clover"></i> ${specialSelections.trevos.join(', ')}</span>`;
-
-                    row.innerHTML = `
-                        <td>${index + 1}<span class="prize-check-icon ms-1"></span></td>
-                        <td>${numbersHtml}</td>
-                    `;
-                    combinationsTable.appendChild(row);
-                });
-
-                // Análise de balanceamento
-                analyzeBalance(combinations, config);
-
-                document.getElementById('resultsSection').classList.remove('d-none');
-                document.getElementById('checkHistoryBtnContainer').classList.remove('d-none');
-                document.getElementById('resultCheckerSection').classList.remove('d-none');
-                document.getElementById('prizeSummary').classList.add('d-none');
-                document.getElementById('drawnNumbersInput').value = '';
-                if(document.getElementById('drawnTrevosInput')) document.getElementById('drawnTrevosInput').value = '';
-                if(document.getElementById('drawnMonthInput')) document.getElementById('drawnMonthInput').value = '';
-                if(document.getElementById('drawnTeamInput')) document.getElementById('drawnTeamInput').value = '';
-                document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
-            }
-
-            // Função para análise de balanceamento (pares/ímpares, altos/baixos)
-            function analyzeBalance(combinations, config) {
-                if (combinations.length === 0 || config.isColumnar) {
-                    document.getElementById('balanceAnalysis').classList.add('d-none');
-                    return;
-                }
-
-                const totalNumbers = config.totalNumbers;
-                const midPoint = Math.ceil(totalNumbers / 2);
-                
-                let totalEven = 0, totalOdd = 0;
-                let totalLow = 0, totalHigh = 0;
-                let totalNumbersCount = 0;
-
-                combinations.forEach(combo => {
-                    combo.forEach(num => {
-                        totalNumbersCount++;
-                        // Par ou ímpar
-                        if (num % 2 === 0) totalEven++;
-                        else totalOdd++;
-                        
-                        // Alto ou baixo
-                        if (num <= midPoint) totalLow++;
-                        else totalHigh++;
-                    });
-                });
-
-                // Calcular porcentagens
-                const evenPercent = Math.round((totalEven / totalNumbersCount) * 100);
-                const oddPercent = Math.round((totalOdd / totalNumbersCount) * 100);
-                const lowPercent = Math.round((totalLow / totalNumbersCount) * 100);
-                const highPercent = Math.round((totalHigh / totalNumbersCount) * 100);
-
-                // Atualizar a UI
-                document.getElementById('evenPercent').textContent = `${evenPercent}% Pares`;
-                document.getElementById('oddPercent').textContent = `${oddPercent}% Ímpares`;
-                document.getElementById('lowPercent').textContent = `${lowPercent}% Baixos`;
-                document.getElementById('highPercent').textContent = `${highPercent}% Altos`;
-
-                // Ajustar classes de acordo com o balanceamento
-                document.getElementById('evenPercent').className = `balance-indicator ${getBalanceClass(evenPercent, 50)}`;
-                document.getElementById('oddPercent').className = `balance-indicator ${getBalanceClass(oddPercent, 50)}`;
-                document.getElementById('lowPercent').className = `balance-indicator ${getBalanceClass(lowPercent, 50)}`;
-                document.getElementById('highPercent').className = `balance-indicator ${getBalanceClass(highPercent, 50)}`;
-
-                // Atualizar barras de progresso
-                document.getElementById('evenProgress').style.width = `${evenPercent}%`;
-                document.getElementById('oddProgress').style.width = `${oddPercent}%`;
-                document.getElementById('lowProgress').style.width = `${lowPercent}%`;
-                document.getElementById('highProgress').style.width = `${highPercent}%`;
-
-                // Gerar recomendações
-                let recommendations = '';
-                if (Math.abs(evenPercent - oddPercent) > 20) {
-                    recommendations += `<p class="mb-1"><i class="fas fa-exclamation-triangle text-warning me-1"></i> Seu jogo está desbalanceado entre pares e ímpares. Tente manter uma proporção mais equilibrada (40-60%).</p>`;
-                }
-                
-                if (Math.abs(lowPercent - highPercent) > 20) {
-                    recommendations += `<p class="mb-1"><i class="fas fa-exclamation-triangle text-warning me-1"></i> Seu jogo está desbalanceado entre números baixos e altos. Tente manter uma proporção mais equilibrada (40-60%).</p>`;
-                }
-                
-                if (recommendations === '') {
-                    recommendations = `<p class="mb-0"><i class="fas fa-check-circle text-success me-1"></i> Seu jogo está bem balanceado entre pares/ímpares e baixos/altos.</p>`;
-                }
-                
-                document.getElementById('balanceRecommendations').innerHTML = recommendations;
-                document.getElementById('balanceAnalysis').classList.remove('d-none');
-            }
-
-            function getBalanceClass(percentage, ideal) {
-                const diff = Math.abs(percentage - ideal);
-                if (diff <= 10) return 'balance-good';
-                if (diff <= 20) return 'balance-fair';
-                return 'balance-poor';
-            }
-
-            function displayPrizeSummary(prizeCounts, totalPrizeMoney, totalCostValue, config) {
-                const prizeList = document.getElementById('prizeList');
-                const financialSummaryList = document.getElementById('financialSummaryList');
-                prizeList.innerHTML = '';
-                let hasPrizes = false;
-                
-                Object.keys(prizeCounts).sort().reverse().forEach(tier => {
-                    const count = prizeCounts[tier];
-                    if (count > 0) {
-                        hasPrizes = true;
-                        const li = document.createElement('li');
-                        li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                        let tierText = tier;
-                        if (config.hasTrevos) tierText = `${tier.replace('+', ' acertos + ')} trevo(s)`;
-                        else if (tier === 'month') tierText = 'Mês da Sorte';
-                        else if (tier === 'team') tierText = 'Time do Coração';
-                        else tierText = `${tier} acertos`;
-                        
-                        li.innerHTML = `${tierText} <span class="badge bg-primary rounded-pill">${count}</span>`;
-                        prizeList.appendChild(li);
-                    }
-                });
-
-                if (!hasPrizes) {
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item';
-                    li.textContent = 'Nenhuma aposta premiada encontrada.';
-                    prizeList.appendChild(li);
-                }
-                
-                financialSummaryList.innerHTML = '';
-                const netResult = totalPrizeMoney - totalCostValue;
-                const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                financialSummaryList.innerHTML = `
-                    <li class="list-group-item d-flex justify-content-between align-items-center">Total Gasto<span>${formatCurrency(totalCostValue)}</span></li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">Total em Prêmios<span>${formatCurrency(totalPrizeMoney)}</span></li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center fw-bold ${netResult >= 0 ? 'text-success' : 'text-danger'}">Saldo Final<span>${formatCurrency(netResult)}</span></li>
-                `;
-                document.getElementById('prizeSummary').classList.remove('d-none');
-            }
-
-            function displayAnalysisResults(frequency, pairs, count, suggestions, config) {
-                const container = document.getElementById('analysisResultsContainer');
-                let html = `<h4>Análise dos Últimos ${count} Concursos Válidos</h4>`;
-                
-                html += `<div class="row mt-4">
-                            <div class="col-md-6">
-                                <h5><i class="fas fa-sort-numeric-down me-2"></i>Dezenas Mais Sorteadas</h5>
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-hover">
-                                        <thead><tr><th>Dezena</th><th>Frequência</th></tr></thead>
-                                        <tbody>`;
-                frequency.slice(0, 15).forEach(([num, freq]) => {
-                    html += `<tr><td><span class="badge bg-secondary">${num.toString().padStart(2,'0')}</span></td><td>${freq}</td></tr>`;
-                });
-                html += `</tbody></table></div></div>`;
-
-                html += `<div class="col-md-6 mt-4 mt-md-0">
-                                <h5><i class="fas fa-link me-2"></i>Pares Mais Sorteados</h5>
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-hover">
-                                        <thead><tr><th>Par</th><th>Frequência</th></tr></thead>
-                                        <tbody>`;
-                pairs.slice(0, 15).forEach(([pair, freq]) => {
-                    html += `<tr><td><span class="badge bg-secondary">${pair}</span></td><td>${freq}</td></tr>`;
-                });
-                html += `</tbody></table></div></div>`;
-
-                if (suggestions) {
-                    const formatSuggestion = (numbers) => numbers.map(n => `<span class="badge bg-light text-dark">${n.toString().padStart(2, '0')}</span>`).join('');
-                    
-                    html += `<div class="mt-4">
-                                <h5><i class="fas fa-lightbulb me-2"></i>Sugestões para Próximos Jogos</h5>
-                                <div class="card bg-dark">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <h6 class="card-title mb-0"><span class="badge bg-danger me-2">Quentes</span> Jogo com as dezenas mais sorteadas</h6>
-                                            <button class="btn btn-sm btn-outline-light use-suggestion-btn" data-suggestion="${suggestions.hot.join(',')}"><i class="fas fa-arrow-circle-left me-1"></i> Usar Jogo</button>
-                                        </div>
-                                        <div class="suggestion-numbers">${formatSuggestion(suggestions.hot)}</div>
-                                        <hr>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <h6 class="card-title mb-0"><span class="badge bg-primary me-2">Frios</span> Jogo com as dezenas menos sorteadas</h6>
-                                            <button class="btn btn-sm btn-outline-light use-suggestion-btn" data-suggestion="${suggestions.cold.join(',')}"><i class="fas fa-arrow-circle-left me-1"></i> Usar Jogo</button>
-                                        </div>
-                                        <div class="suggestion-numbers">${formatSuggestion(suggestions.cold)}</div>
-                                        <hr>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <h6 class="card-title mb-0"><span class="badge bg-warning text-dark me-2">Misto</span> Jogo com dezenas quentes e frias</h6>
-                                            <button class="btn btn-sm btn-outline-light use-suggestion-btn" data-suggestion="${suggestions.mixed.join(',')}"><i class="fas fa-arrow-circle-left me-1"></i> Usar Jogo</button>
-                                        </div>
-                                        <div class="suggestion-numbers">${formatSuggestion(suggestions.mixed)}</div>
-                                    </div>
-                                </div>
-                               </div>`;
-                }
-
-                container.innerHTML = html;
-                container.style.display = 'block';
-                
-                if (suggestions) {
-                    document.querySelectorAll('.number-btn').forEach(btn => btn.classList.remove('hot-number', 'cold-number'));
-                    suggestions.hot.forEach(num => {
-                        const btn = document.querySelector(`.number-btn[data-number="${num}"]`);
-                        if (btn) btn.classList.add('hot-number');
-                    });
-                    suggestions.cold.forEach(num => {
-                        const btn = document.querySelector(`.number-btn[data-number="${num}"]`);
-                        if (btn) btn.classList.add('cold-number');
-                    });
-                }
-            }
-
-            function showError(message) {
-                document.getElementById('errorMessage').textContent = message;
-                document.getElementById('errorAlert').classList.remove('d-none');
-                document.getElementById('errorAlert').scrollIntoView({ behavior: 'smooth' });
-            }
-
-            function hideError() {
-                document.getElementById('errorAlert').classList.add('d-none');
-            }
-
-            function hideResults() {
-                document.getElementById('resultsSection').classList.add('d-none');
-                document.getElementById('resultCheckerSection').classList.add('d-none');
-                document.getElementById('prizeSummary').classList.add('d-none');
-                document.getElementById('checkHistoryBtnContainer').classList.add('d-none');
-            }
-
-            function showCopyNotification() {
-                const copyNotification = document.getElementById('copyNotification');
-                copyNotification.classList.remove('d-none');
-                setTimeout(() => {
-                    copyNotification.classList.add('d-none');
-                }, 2000);
-            }
-
-            // --- UTILS ---
-            function calculateCombinationsCount(n, k) {
-                if (k < 0 || k > n) return 0;
-                if (k === 0 || k === n) return 1;
-                if (k > n / 2) k = n - k;
-                let res = 1;
-                for (let i = 1; i <= k; i++) {
-                    res = res * (n - i + 1) / i;
-                }
-                return Math.round(res);
-            }
-
-            function getCombinations(sourceArray, comboSize) {
-                const result = [];
-                const n = sourceArray.length;
-                if (comboSize < 0 || comboSize > n) return [];
-                const indices = Array.from({ length: comboSize }, (_, i) => i);
-                while (true) {
-                    result.push(indices.map(i => sourceArray[i]));
-                    let i = comboSize - 1;
-                    while (i >= 0 && indices[i] === i + n - comboSize) i--;
-                    if (i < 0) break;
-                    indices[i]++;
-                    for (let j = i + 1; j < comboSize; j++) indices[j] = indices[j - 1] + 1;
-                }
-                return result;
-            }
-
-            function getCartesianProduct(arrays) {
-                return arrays.reduce((a, b) => a.flatMap(x => b.map(y => [...x, y].sort((c, d) => c - d))), [[]]);
-            }
-
-            function hexToRgb(hex) {
-                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-                return result ? [
-                    parseInt(result[1], 16),
-                    parseInt(result[2], 16),
-                    parseInt(result[3], 16)
-                ] : [0, 0, 0];
-            }
-
-            function copyCombinationsToClipboard(combinations, config, specialSelections, fixedNumbers) {
-                if (combinations.length === 0) {
-                    showError('Não há combinações para copiar.');
-                    return;
-                }
-
-                const textToCopy = combinations.map(combo => {
-                    let line = combo.map(n => n.toString().padStart(2, '0')).join(' ');
-                    if (config.hasTeam) line += ` | ${specialSelections.team}`;
-                    if (config.hasMonth) line += ` | ${specialSelections.month}`;
-                    if (config.hasTrevos) line += ` | Trevos: ${specialSelections.trevos.join(', ')}`;
-                    // Adicionar informação sobre dezenas fixas
-                    if (fixedNumbers.length > 0) {
-                        line += ` | Fixas: ${fixedNumbers.map(n => n.toString().padStart(2, '0')).join(' ')}`;
-                    }
-                    return line;
-                }).join('\n');
-
-                const textArea = document.createElement('textarea');
-                textArea.value = textToCopy;
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    showCopyNotification();
-                } catch (err) {
-                    showError('Falha ao copiar os jogos. Tente novamente.');
-                    console.error('Copy failed:', err);
-                }
-                document.body.removeChild(textArea);
-            }
-
-            function exportData(format, combinations, config, specialSelections, hitResults, drawnNumbersStr, drawnTrevosStr, fixedNumbers) {
-                if (combinations.length === 0) {
-                    showError('Não há combinações para exportar.');
-                    return;
-                }
-                const fileName = `${config.displayName.toLowerCase().replace(/[\s-]+/g, '_')}_apostas`;
-                if (format === 'pdf') {
-                    exportToStyledPdf(fileName, config, combinations, specialSelections, fixedNumbers);
-                } else if (format === 'png') {
-                    exportToPng(fileName, config, combinations, hitResults, drawnNumbersStr, specialSelections, drawnTrevosStr, fixedNumbers);
-                } else {
-                    let content = '';
-                    let mimeType = '';
-                    if (format === 'csv') {
-                        let headers = config.isColumnar ?
-                            Array.from({ length: 7 }, (_, i) => `Coluna ${i + 1}`).join(',') :
-                            Array.from({ length: config.betSize }, (_, i) => `N${i + 1}`).join(',');
-                        if (config.hasTeam) headers += ',Time do Coração';
-                        if (config.hasMonth) headers += ',Mês da Sorte';
-                        if (config.hasTrevos) headers += ',Trevos';
-                        // Adicionar coluna para dezenas fixas, se houver
-                        if (fixedNumbers.length > 0) {
-                            headers += ',Fixas';
-                        }
-                        
-                        content = 'Aposta,' + headers + '\n';
-                        combinations.forEach((combo, index) => {
-                            content += `${index + 1},${combo.join(',')}`;
-                            if (config.hasTeam) content += `,${specialSelections.team}`;
-                            if (config.hasMonth) content += `,${specialSelections.month}`;
-                            if (config.hasTrevos) content += `,${specialSelections.trevos.join(' ')}`;
-                            // Adicionar as dezenas fixas
-                            if (fixedNumbers.length > 0) {
-                                content += `,${fixedNumbers.join(' ')}`;
-                            }
-                            content += '\n';
-                        });
-                        mimeType = 'text/csv';
-                    } else { // txt
-                        combinations.forEach((combo, index) => {
-                            content += `Aposta ${String(index + 1).padStart(4, '0')}: ${combo.map(n => n.toString().padStart(2, '0')).join(' ')}`;
-                            if (config.hasTeam) content += ` | Time: ${specialSelections.team}`;
-                            if (config.hasMonth) content += ` | Mês: ${specialSelections.month}`;
-                            if (config.hasTrevos) content += ` | Trevos: ${specialSelections.trevos.join(', ')}`;
-                            // Adicionar informação sobre dezenas fixas
-                            if (fixedNumbers.length > 0) {
-                                content += ` | Fixas: ${fixedNumbers.map(n => n.toString().padStart(2, '0')).join(' ')}`;
-                            }
-                            content += '\n';
-                        });
-                        mimeType = 'text/plain';
-                    }
-                    const blob = new Blob([content], { type: `${mimeType};charset=utf-8;` });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${fileName}.${format}`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                }
-            }
-
-            function exportToPng(fileName, config, combinations, hitResults, drawnNumbersStr, specialSelections, drawnTrevosStr, fixedNumbers) {
-                const exportContainer = document.createElement('div');
-                exportContainer.id = 'png-export-container';
-                exportContainer.style.position = 'absolute';
-                exportContainer.style.left = '-9999px';
-                exportContainer.style.backgroundColor = 'white';
-                exportContainer.style.padding = '20px';
-                exportContainer.style.width = '800px';
-                exportContainer.style.fontFamily = 'Arial, sans-serif';
-                
-                const hasCheckedResults = hitResults && hitResults.length > 0;
-                let headerText = `Total de ${combinations.length} combinações`;
-                if(hasCheckedResults && drawnNumbersStr) {
-                    let fullDrawnStr = drawnNumbersStr;
-                    if (config.hasTrevos && drawnTrevosStr) {
-                        fullDrawnStr += ` | Trevos: ${drawnTrevosStr}`;
-                    }
-                    headerText += `<br><small style="font-size: 12px; color: #666;">Conferido com: ${fullDrawnStr}</small>`;
-                }
-                // Adicionar informação sobre dezenas fixas
-                if (fixedNumbers.length > 0) {
-                    headerText += `<br><small style="font-size: 12px; color: #666;">Dezenas fixas: ${fixedNumbers.join(', ')}</small>`;
-                }
-
-                let content = `<div style="text-align: center; border-bottom: 2px solid ${config.color}; padding-bottom: 10px; margin-bottom: 15px;"><h1 style="color: ${config.color}; margin: 0;">Apostas - ${config.displayName}</h1><p style="margin: 0; color: #555;">${headerText}</p></div><div style="column-count: 3; column-gap: 20px;">`;
-                
-                combinations.forEach((combo, index) => {
-                    let trophyIcon = '';
-                    if (hasCheckedResults) {
-                        const hitInfo = hitResults[index];
-                        if (hitInfo) {
-                            const tier = config.hasTrevos ? `${hitInfo.hits}+${hitInfo.trevoHits}` : hitInfo.hits;
-                            const tierIndex = config.prizeTiers.indexOf(tier);
-                            if(tierIndex !== -1) {
-                                if (tierIndex === 0) trophyIcon = '🏆 '; // Maior prêmio
-                                else if (tierIndex < config.prizeTiers.length - 1) trophyIcon = '🥈 '; // Intermediário
-                                else trophyIcon = '🥉 '; // Menor prêmio
-                            }
-                        }
-                    }
-
-                    let comboText = combo.map(n => n.toString().padStart(2, '0')).join(' ');
-                    if (config.hasTeam) comboText += ` | ${specialSelections.team}`;
-                    if (config.hasMonth) comboText += ` | ${specialSelections.month}`;
-                    if (config.hasTrevos) comboText += ` | Trevos: ${specialSelections.trevos.join(', ')}`;
-
-                    content += `<p style="margin: 0 0 8px 0; font-size: 14px; color: #333; break-inside: avoid-column;">${trophyIcon}<strong style="color: ${config.color};">${String(index + 1).padStart(3, '0')}:</strong> ${comboText}</p>`;
-                });
-                content += `</div>`;
-                exportContainer.innerHTML = content;
-                document.body.appendChild(exportContainer);
-                html2canvas(exportContainer, { scale: 2 }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = `${fileName}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                    document.body.removeChild(exportContainer);
-                }).catch(err => {
-                    showError("Ocorreu um erro ao gerar a imagem PNG.");
-                    console.error("html2canvas error:", err);
-                    document.body.removeChild(exportContainer);
-                });
-            }
-
-            function exportToStyledPdf(fileName, config, combinations, specialSelections, fixedNumbers) {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('p', 'mm', 'a4');
-                const pageW = doc.internal.pageSize.getWidth();
-                const pageH = doc.internal.pageSize.getHeight();
-                const margin = 10;
-                const cardGap = 8;
-                const cardsPerRow = 2;
-
-                const cardW = (pageW - (margin * 2) - (cardGap * (cardsPerRow - 1))) / cardsPerRow;
-                
-                const headerH = 10;
-                const gridPadding = 2;
-                const cellMargin = 0.5;
-                const footerH = 7; // Aumentado para acomodar informações extras
-                let gridH;
-
-                if (config.isColumnar) {
-                    const numCols = 7;
-                    const cellW = (cardW - (gridPadding * 2)) / numCols - cellMargin;
-                    const cellH = cellW * 0.9;
-                    gridH = 10 * (cellH + cellMargin);
-                } else {
-                    const numRowsInGrid = Math.ceil(config.totalNumbers / config.pdfGridCols);
-                    const cellW = (cardW - (gridPadding * 2)) / config.pdfGridCols - cellMargin;
-                    const cellH = cellW;
-                    gridH = numRowsInGrid * (cellH + cellMargin);
-                }
-                const cardH = headerH + gridH + (gridPadding * 2) + footerH;
-
-                const cardsPerCol = Math.floor((pageH - (margin * 2) + cardGap) / (cardH + cardGap));
-                const cardsPerPage = cardsPerRow * cardsPerCol;
-
-                if (cardsPerPage <= 0) {
-                    showError("Os volantes são muito grandes para caber em uma página.");
-                    return;
-                }
-
-                combinations.forEach((combo, index) => {
-                    if (index > 0 && index % cardsPerPage === 0) {
-                        doc.addPage();
-                    }
-                    const indexOnPage = index % cardsPerPage;
-                    const col = indexOnPage % cardsPerRow;
-                    const row = Math.floor(indexOnPage / cardsPerRow);
-                    const x = margin + col * (cardW + cardGap);
-                    const y = margin + row * (cardH + cardGap);
-                    drawBetCard(doc, combo, index + 1, x, y, cardW, cardH, config, specialSelections, fixedNumbers);
-                });
-                doc.save(`${fileName}.pdf`);
-            }
-
-            function drawBetCard(doc, combo, betNumber, x, y, w, h, config, specialSelections, fixedNumbers) {
-                const headerH = 10;
-                const padding = 2;
-
-                doc.setDrawColor(220);
-                doc.setFillColor(255, 255, 255);
-                doc.roundedRect(x, y, w, h, 2, 2, 'FD');
-
-                const [r, g, b] = hexToRgb(config.color);
-                doc.setFillColor(r, g, b);
-                doc.roundedRect(x, y, w, headerH, 2, 2, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.text(config.displayName, x + padding + 2, y + headerH / 2 + 2);
-                doc.setFontSize(9);
-                doc.text(`Aposta #${betNumber}`, x + w - padding - 2, y + headerH / 2 + 2, { align: 'right' });
-
-                const gridX = x + padding;
-                const gridY = y + headerH + padding + 2;
-                const gridW = w - (padding * 2);
-                const cellMargin = 0.5;
-
-                if (config.isColumnar) {
-                    const numCols = 7;
-                    const cellW = (gridW / numCols) - cellMargin;
-                    const cellH = cellW * 0.9;
-                    const fontSize = cellW * 0.5;
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(fontSize);
-
-                    for (let c = 0; c < numCols; c++) {
-                        const colX = gridX + c * (cellW + cellMargin);
-                        for (let num = 0; num < 10; num++) {
-                            const cellY = gridY + num * (cellH + cellMargin);
-                            const numStr = num.toString();
-                            if (combo[c] === num) {
-                                doc.setFillColor(40, 40, 40);
-                                doc.roundedRect(colX, cellY, cellW, cellH, 1, 1, 'F');
-                                doc.setTextColor(255, 255, 255);
-                                doc.text(numStr, colX + cellW / 2, cellY + cellH / 2, { align: 'center', baseline: 'middle' });
-                            } else {
-                                doc.setDrawColor(230);
-                                doc.roundedRect(colX, cellY, cellW, cellH, 1, 1, 'D');
-                                doc.setTextColor(150, 150, 150);
-                                doc.text(numStr, colX + cellW / 2, cellY + cellH / 2, { align: 'center', baseline: 'middle' });
-                            }
-                        }
-                    }
-                } else {
-                    const cellW = (gridW / config.pdfGridCols) - cellMargin;
-                    const cellH = cellW;
-                    const fontSize = cellW * 0.45;
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(fontSize);
-
-                    for (let i = 1; i <= config.totalNumbers; i++) {
-                        const r_grid = Math.floor((i - 1) / config.pdfGridCols);
-                        const c_grid = (i - 1) % config.pdfGridCols;
-                        const cellX = gridX + c_grid * (cellW + cellMargin);
-                        const cellY = gridY + r_grid * (cellH + cellMargin);
-                        const numStr = i.toString().padStart(2, '0');
-
-                        if (combo.includes(i)) {
-                            doc.setFillColor(40, 40, 40);
-                            doc.roundedRect(cellX, cellY, cellW, cellH, 1, 1, 'F');
-                            doc.setTextColor(255, 255, 255);
-                            doc.text(numStr, cellX + cellW / 2, cellY + cellH / 2, { align: 'center', baseline: 'middle' });
-                        } else {
-                            doc.setDrawColor(230);
-                            doc.roundedRect(cellX, cellY, cellW, cellH, 1, 1, 'D');
-                            doc.setTextColor(150, 150, 150);
-                            doc.text(numStr, cellX + cellW / 2, cellY + cellH / 2, { align: 'center', baseline: 'middle' });
-                        }
-                    }
-                }
-                
-                // Adiciona informações especiais no rodapé do volante
-                let specialY = y + h - padding - 1;
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8);
-                doc.setTextColor(80, 80, 80);
-
-                let specialText = '';
-                // Adicionar informação sobre dezenas fixas
-                if (fixedNumbers.length > 0) {
-                    specialText += `Fixas: ${fixedNumbers.join(', ')}`;
-                }
-                if (config.hasTeam && specialSelections.team) {
-                    specialText += `${specialText ? ' | ' : ''}Time: ${specialSelections.team}`;
-                }
-                if (config.hasMonth && specialSelections.month) {
-                    specialText += `${specialText ? ' | ' : ''}Mês: ${specialSelections.month}`;
-                }
-                if (config.hasTrevos && specialSelections.trevos.length > 0) {
-                    specialText += `${specialText ? ' | ' : ''}Trevos: ${specialSelections.trevos.join(', ')}`;
-                }
-
-                if (specialText) {
-                    // Quebrar texto se for muito longo
-                    const maxWidth = w - (padding * 2) - 4;
-                    if (doc.getTextWidth(specialText) > maxWidth) {
-                        const lines = doc.splitTextToSize(specialText, maxWidth);
-                        lines.forEach((line, i) => {
-                            doc.text(line, x + padding + 2, specialY - (i * 3));
-                        });
-                    } else {
-                        doc.text(specialText, x + padding + 2, specialY);
-                    }
-                }
-
-                doc.setTextColor(0, 0, 0);
-            }
-
-            // --- MAIN LOGIC ---
-            // --- DOM ELEMENTS ---
-            const gameModeSelect = document.getElementById('gameModeSelect');
-            const numberGridContainer = document.getElementById('numberGridContainer');
-            const superSeteGridContainer = document.getElementById('superSeteGridContainer');
-            const clearBtn = document.getElementById('clearBtn');
-            const generateBtn = document.getElementById('generateBtn');
-            const loadingSpinner = document.getElementById('loadingSpinner');
-            const exportCsv = document.getElementById('exportCsv');
-            const exportTxt = document.getElementById('exportTxt');
-            const exportPdf = document.getElementById('exportPdf');
-            const exportPng = document.getElementById('exportPng');
-            const copyGamesBtn = document.getElementById('copyGamesBtn');
-            const gameNameHeaders = document.querySelectorAll('.gameNameHeader');
-            const rulesAlert = document.getElementById('rulesAlert');
-            const selectionHeader = document.getElementById('selectionHeader');
-            const checkResultsBtn = document.getElementById('checkResultsBtn');
-            const generationModeContainer = document.getElementById('generationModeContainer');
-            const generationModeRadios = document.querySelectorAll('input[name="generationMode"]');
-            const fixedNumbersInfo = document.getElementById('fixedNumbersInfo');
-            const specialSelectionContainer = document.getElementById('specialSelectionContainer');
-            const contestNumberInput = document.getElementById('contestNumberInput');
-            const fetchLatestContestBtn = document.getElementById('fetchLatestContestBtn');
-            const analyzeContestBtn = document.getElementById('analyzeContestBtn');
-            const historyAnalysisResult = document.getElementById('historyAnalysisResult');
-            const runAnalysisBtn = document.getElementById('runAnalysisBtn');
-            const contestCountInput = document.getElementById('contestCountInput');
-            const analysisResultsContainer = document.getElementById('analysisResultsContainer');
-            const analysisLoadingSpinner = document.getElementById('analysisLoadingSpinner');
-            const selectAllBtn = document.getElementById('selectAllBtn');
-            const resetAllBtn = document.getElementById('resetAllBtn');
-            const analyzeRangeBtn = document.getElementById('analyzeRangeBtn');
-            const rangeHistoryAnalysisResult = document.getElementById('rangeHistoryAnalysisResult');
-            const upcomingTab = document.getElementById('upcoming-tab');
-            const latestResultsTab = document.getElementById('latest-results-tab');
-            const updateSheetBtn = document.getElementById('updateSheetBtn');
-
-
-            // --- STATE ---
-            let state = {
-                selectedNumbers: [],
-                fixedNumbers: [],
-                selectedTrevos: [],
-                superSeteSelections: [[],[],[],[],[],[],[]],
-                generatedCombinations: [],
-                currentGameMode: 'lotofacil',
-                totalCostValue: 0,
-                hitResults: [],
-                winningCombinationsInRange: [], // New state for range analysis
-                selectedTeam: null,
-                selectedMonth: null,
-            };
-
-            // --- INITIALIZATION ---
-            function initializeApp() {
-                gameModeSelect.addEventListener('change', (e) => updateUIForGameMode(e.target.value));
-                clearBtn.addEventListener('click', clearSelection);
-                generateBtn.addEventListener('click', handleGenerateClick);
-                checkResultsBtn.addEventListener('click', handleCheckResults);
-                
-                const exportHandler = (format) => (e) => {
-                    e.preventDefault();
-                    const config = lotteryConfigs[state.currentGameMode];
-                    const drawnNumbersStr = document.getElementById('drawnNumbersInput').value.trim();
-                    const drawnTrevosStr = document.getElementById('drawnTrevosInput')?.value.trim() || '';
-                    exportData(format, state.generatedCombinations, config, getSpecialSelections(), state.hitResults, drawnNumbersStr, drawnTrevosStr, state.fixedNumbers);
-                };
-
-                exportCsv.addEventListener('click', exportHandler('csv'));
-                exportTxt.addEventListener('click', exportHandler('txt'));
-                exportPdf.addEventListener('click', exportHandler('pdf'));
-                exportPng.addEventListener('click', exportHandler('png'));
-
-                copyGamesBtn.addEventListener('click', () => copyCombinationsToClipboard(state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.fixedNumbers));
-                generationModeRadios.forEach(radio => radio.addEventListener('change', (e) => {
-                    fixedNumbersInfo.classList.toggle('d-none', e.target.value !== 'fixo');
-                }));
-                fetchLatestContestBtn.addEventListener('click', handleFetchLatestContest);
-                analyzeContestBtn.addEventListener('click', handleAnalyzeContest);
-                analyzeRangeBtn.addEventListener('click', handleAnalyzeContestRange);
-                runAnalysisBtn.addEventListener('click', runAnalysis);
-                updateSheetBtn.addEventListener('click', handleUpdateSheetClick);
-                analysisResultsContainer.addEventListener('click', handleUseSuggestionClick);
-                selectAllBtn.addEventListener('click', handleSelectAll);
-                resetAllBtn.addEventListener('click', handleResetAll);
-
-                let upcomingDataLoaded = false;
-                upcomingTab.addEventListener('show.bs.tab', function (event) {
-                    if (!upcomingDataLoaded) {
-                        fetchUpcomingContests();
-                        upcomingDataLoaded = true;
-                    }
-                });
-
-                let latestResultsDataLoaded = false;
-                latestResultsTab.addEventListener('show.bs.tab', function (event) {
-                    if (!latestResultsDataLoaded) {
-                        fetchLatestResults();
-                        latestResultsDataLoaded = true;
-                    }
-                });
-
-                updateUIForGameMode(state.currentGameMode);
-                restoreState();
-            }
-            
-            function updateUIForGameMode(mode) {
-                state.currentGameMode = mode;
-                const config = lotteryConfigs[mode];
-                
-                applyThemeColor(config.color, config.hoverColor);
-                gameNameHeaders.forEach(h => h.textContent = config.displayName);
-                rulesAlert.innerHTML = `<i class="fas fa-info-circle me-2"></i>Selecione ${config.isColumnar ? 'de 1 a 3 números por coluna' : `entre <strong>${config.minSelection}</strong> e <strong>${config.maxSelection}</strong> números`} para gerar as apostas.`;
-                selectionHeader.innerHTML = `<i class="fas fa-th me-2"></i>Selecione seus números`;
-                document.getElementById('drawnNumbersInput').placeholder = `Ex: ${Array.from({length: config.betSize}, (_, i) => i + 1).join(', ')}`;
-
-                numberGridContainer.classList.toggle('d-none', !!config.isColumnar);
-                superSeteGridContainer.classList.toggle('d-none', !config.isColumnar);
-                generationModeContainer.classList.toggle('d-none', !!config.isColumnar || ['lotomania', 'timemania'].includes(mode));
-                
-                if (config.isColumnar) {
-                    initializeSuperSeteGrid(superSeteGridContainer, handleSuperSeteClick);
-                } else {
-                    initializeNumberGrid(config.totalNumbers, numberGridContainer, handleNumberClick);
-                }
-
-                buildSpecialSelectors(config, specialSelectionContainer, handleTrevoClick);
-                buildSpecialCheckers(config, document.getElementById('specialCheckerContainer'));
-                clearSelection();
-                analysisResultsContainer.style.display = 'none';
-                
-                document.querySelectorAll('.number-btn').forEach(btn => {
-                    btn.classList.remove('hot-number', 'cold-number');
-                });
-            }
-
-            // --- EVENT HANDLERS ---
-            function handleNumberClick(e) {
-                const button = e.currentTarget;
-                const number = parseInt(button.dataset.number);
-                const config = lotteryConfigs[state.currentGameMode];
-                const isSelected = state.selectedNumbers.includes(number);
-                const isFixed = state.fixedNumbers.includes(number);
-                const generationMode = document.querySelector('input[name="generationMode"]:checked').value;
-
-                if (!isSelected) {    
-                    if (state.selectedNumbers.length < config.maxSelection) {
-                        state.selectedNumbers.push(number);
-                        button.classList.add('active');
-                    } else {
-                        showError(`Você só pode selecionar até ${config.maxSelection} números para a ${config.displayName}.`);
-                    }
-                } else if (isSelected && !isFixed && generationMode === 'fixo') {
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- CONFIGS ---
+        const lotteryConfigs = {
+            lotofacil: {
+                displayName: "Lotofácil", apiName: "lotofacil", fallbackSlug: 'lotofacil', totalNumbers: 25, betSize: 15, minSelection: 15, maxSelection: 20, cost: 3.00, color: '#930089', hoverColor: '#7a0070', pdfGridCols: 5, prizeTiers: [15, 14, 13, 12, 11], prizeValues: { 11: 6.00, 12: 12.00, 13: 30.00, 14: 1500.00, 15: 1700000.00 }
+            },
+            megasena: {
+                displayName: "Mega-Sena", apiName: "megasena", fallbackSlug: 'mega-sena', totalNumbers: 60, betSize: 6, minSelection: 6, maxSelection: 20, cost: 5.00, color: '#209869', hoverColor: '#197c56', pdfGridCols: 10, prizeTiers: [6, 5, 4], prizeValues: { 4: 900.00, 5: 45000.00, 6: 30000000.00 }
+            },
+            maismilionaria: {
+                displayName: "Mais Milionária", apiName: "maismilionaria", fallbackSlug: 'mais-milionaria', totalNumbers: 50, betSize: 6, minSelection: 6, maxSelection: 12, cost: 6.00, color: '#007bff', hoverColor: '#0056b3', pdfGridCols: 10, hasTrevos: true, trevoSize: 2, prizeTiers: ['6+2', '6+1', '5+2', '5+1', '4+2', '4+1', '3+2', '3+1', '2+2', '2+1'], prizeValues: { '6+2': 10000000, '6+1': 500000, '5+2': 50000, '5+1': 1000, '4+2': 1000, '4+1': 100, '3+2': 50, '3+1': 24, '2+2': 12, '2+1': 6 }
+            },
+            quina: {
+                displayName: "Quina", apiName: "quina", fallbackSlug: 'quina', totalNumbers: 80, betSize: 5, minSelection: 5, maxSelection: 15, cost: 2.50, color: '#260085', hoverColor: '#1e006a', pdfGridCols: 10, prizeTiers: [5, 4, 3, 2], prizeValues: { 2: 4.00, 3: 150.00, 4: 7000.00, 5: 1500000.00 }
+            },
+            lotomania: {
+                displayName: "Lotomania", apiName: "lotomania", fallbackSlug: 'lotomania', totalNumbers: 100, betSize: 50, minSelection: 50, maxSelection: 50, cost: 3.00, color: '#f78100', hoverColor: '#c56600', pdfGridCols: 10, prizeTiers: [20, 19, 18, 17, 16, 15, 0], prizeValues: { 15: 10.00, 16: 50.00, 17: 200.00, 18: 1500.00, 19: 50000.00, 20: 1000000.00, 0: 100000.00 }
+            },
+            timemania: {
+                displayName: "Timemania", apiName: "timemania", fallbackSlug: 'timemania', totalNumbers: 80, betSize: 10, minSelection: 10, maxSelection: 10, cost: 3.50, color: '#008000', hoverColor: '#005300', pdfGridCols: 10, hasTeam: true, prizeTiers: [7, 6, 5, 4, 3], prizeValues: { 3: 5.00, 4: 10.00, 5: 25.00, 6: 1000.00, 7: 25000.00, "team": 8.50 }
+            },
+            duplasena: {
+                displayName: "Dupla Sena", apiName: "duplasena", fallbackSlug: 'dupla-sena', totalNumbers: 50, betSize: 6, minSelection: 6, maxSelection: 15, cost: 2.50, color: '#a50000', hoverColor: '#7d0000', pdfGridCols: 10, prizeTiers: [6, 5, 4, 3], prizeValues: { 3: 2.50, 4: 100.00, 5: 4000.00, 6: 200000.00 }
+            },
+            diadesorte: {
+                displayName: "Dia de Sorte", apiName: "diadesorte", fallbackSlug: 'dia-de-sorte', totalNumbers: 31, betSize: 7, minSelection: 7, maxSelection: 15, cost: 2.50, color: '#f8a700', hoverColor: '#c58400', pdfGridCols: 7, hasMonth: true, prizeTiers: [7, 6, 5, 4], prizeValues: { 4: 5.00, 5: 25.00, 6: 2000.00, 7: 300000.00, "month": 2.50 }
+            },
+            supersete: {
+                displayName: "Super Sete", apiName: "supersete", fallbackSlug: 'super-sete', totalNumbers: 10, betSize: 7, minSelection: 7, maxSelection: 21, cost: 2.50, color: '#8a2be2', hoverColor: '#6921b2', isColumnar: true, prizeTiers: [7, 6, 5, 4, 3], prizeValues: { 3: 5.00, 4: 50.00, 5: 1000.00, 6: 15000.00, 7: 500000.00 }
+            }
+        };
+        const TEAMS = ["ABC/RN", "Altos/PI", "América/MG", "América/RN", "Aparecidense/GO", "Athletico/PR", "Atlético/AC", "Atlético/CE", "Atlético/GO", "Atlético/MG", "Avaí/SC", "Bahia/BA", "Boavista/RJ", "Botafogo/PB", "Botafogo/RJ", "Botafogo/SP", "Bragantino/SP", "Brasil de Pelotas/RS", "Brasiliense/DF", "Brusque/SC", "Campinense/PB", "Caxias/RS", "Ceará/CE", "Chapecoense/SC", "Cianorte/PR", "Confiança/SE", "Corinthians/SP", "Coritiba/PR", "CRB/AL", "Criciúma/SC", "Cruzeiro/MG", "CSA/AL", "Cuiabá/MT", "Ferroviária/SP", "Ferroviário/CE", "Figueirense/SC", "Flamengo/RJ", "Floresta/CE", "Fluminense/RJ", "Fortaleza/CE", "Goiás/GO", "Grêmio/RS", "Guarani/SP", "Imperatriz/MA", "Internacional/RS", "Ituano/SP", "Jacuipense/BA", "Joinville/SC", "Juazeirense/BA", "Juventude/RS", "Londrina/PR", "Luverdense/MT", "Manaus/AM", "Mirassol/SP", "Moto Club/MA", "Náutico/PE", "Novorizontino/SP", "Oeste/SP", "Operário/PR", "Palmeiras/SP", "Paraná/PR", "Paysandu/PA", "Ponte Preta/SP", "Portuguesa/SP", "Remo/PA", "Sampaio Corrêa/MA", "Santa Cruz/PE", "Santo André/SP", "Santos/SP", "São Bento/SP", "São José/RS", "São Paulo/SP", "São Raimundo/RR", "Sport/PE", "Tombense/MG", "Treze/PB", "Vasco/RJ", "Vila Nova/GO", "Vitória/BA", "Volta Redonda/RJ", "Ypiranga/RS"];
+        const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        const MAX_COMBINATIONS = 50000;
+
+        // --- GOOGLE SHEETS API CONFIG ---
+        const SHEET_ID = 'COLE_SEU_SHEET_ID_AQUI'; 
+        const SHEET_NAME = 'COLE_O_NOME_DA_SUA_ABA_AQUI';
+        const SCRIPT_URL = 'COLE_A_URL_DO_SEU_SCRIPT_WEB_APP_AQUI';
+        const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
+
+        // --- API & DATA HANDLING ---
+        let sheetDatabaseCache = null;
+
+        async function fetchSheetDatabase() {
+            if (sheetDatabaseCache) {
+                return sheetDatabaseCache;
+            }
+            try {
+                const response = await fetch(GVIZ_URL);
+                if (!response.ok) {
+                    throw new Error('A resposta da rede para o Google Sheet não foi OK');
+                }
+                const text = await response.text();
+                // Extrai o JSON da resposta da Google Visualization API
+                const jsonString = text.match(/google\.visualization\.Query\.setResponse\((.*)\)/s)[1];
+                const data = JSON.parse(jsonString);
+                
+                // Converte o formato da planilha para o formato do antigo db.json
+                const formattedDb = {};
+                data.table.rows.forEach(row => {
+                    const game = row.c[0].v;
+                    const contestData = JSON.parse(row.c[2].v); // A coluna C (índice 2) contém o JSON do concurso
+                    if (!formattedDb[game]) {
+                        formattedDb[game] = [];
+                    }
+                    formattedDb[game].push(contestData);
+                });
+
+                sheetDatabaseCache = formattedDb;
+                return sheetDatabaseCache;
+            } catch (error) {
+                console.error('Falha ao carregar ou processar dados do Google Sheet:', error);
+                showError("Não foi possível carregar os dados dos concursos da planilha. Verifique a configuração e a conexão.");
+                return null;
+            }
+        }
+
+        async function searchSheetDatabase(gameMode, contestNumber) {
+            const db = await fetchSheetDatabase();
+            if (!db || !db[gameMode]) {
+                return null;
+            }
+            const contestNum = parseInt(contestNumber, 10);
+            const result = db[gameMode].find(contest => contest.numero === contestNum);
+            return result || null;
+        }
+
+        async function getLatestContestFromSheetDB(gameMode) {
+            const db = await fetchSheetDatabase();
+            if (!db || !db[gameMode] || db[gameMode].length === 0) {
+                return null;
+            }
+            return db[gameMode].reduce((latest, current) => (current.numero > latest.numero ? current : latest));
+        }
+
+        async function getContestsForAnalysisFromSheetDB(gameMode, count) {
+            const db = await fetchSheetDatabase();
+            if (!db || !db[gameMode] || db[gameMode].length === 0) {
+                return [];
+            }
+            return db[gameMode]
+                .sort((a, b) => b.numero - a.numero)
+                .slice(0, count);
+        }
+        
+        async function getContestsForAnalysisFromSheetDBByRange(gameMode, start, end) {
+            const db = await fetchSheetDatabase();
+            if (!db || !db[gameMode] || db[gameMode].length === 0) {
+                return [];
+            }
+            return db[gameMode].filter(contest => contest.numero >= start && contest.numero <= end)
+                                        .sort((a, b) => a.numero - b.numero);
+        }
+
+        async function fetchApiData(url) {
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error('A resposta da rede não foi OK.');
+            return response.json();
+        }
+
+        // --- UI ---
+        function applyThemeColor(color, hoverColor) {
+            document.documentElement.style.setProperty('--primary-color', color);
+            document.documentElement.style.setProperty('--primary-hover-color', hoverColor);
+        }
+
+        function initializeNumberGrid(totalNum, container, clickHandler) {
+            container.innerHTML = '';
+            for (let i = 1; i <= totalNum; i++) {
+                const button = document.createElement('button');
+                button.className = 'btn btn-outline-primary number-btn';
+                button.dataset.number = i;
+                button.innerHTML = `<span>${i.toString().padStart(2, '0')}</span>`;
+                button.addEventListener('click', clickHandler);
+                container.appendChild(button);
+            }
+        }
+
+        function initializeSuperSeteGrid(container, clickHandler) {
+            container.innerHTML = '';
+            for (let col = 0; col < 7; col++) {
+                const colDiv = document.createElement('div');
+                colDiv.className = 'super-sete-column';
+                colDiv.innerHTML = `<h6>Col ${col + 1}</h6>`;
+                for (let num = 0; num < 10; num++) {
+                    const button = document.createElement('button');
+                    button.className = 'btn btn-outline-primary number-btn';
+                    button.dataset.number = num;
+                    button.dataset.column = col;
+                    button.innerHTML = `<span>${num}</span>`;
+                    button.addEventListener('click', clickHandler);
+                    colDiv.appendChild(button);
+                }
+                container.appendChild(colDiv);
+            }
+        }
+
+        function buildSpecialSelectors(config, container, trevoClickHandler) {
+            container.innerHTML = '';
+            if (config.hasTeam) {
+                let html = `<label for="teamSelect" class="form-label">Time do Coração</label><select id="teamSelect" class="form-select">`;
+                TEAMS.sort().forEach(team => html += `<option value="${team}">${team}</option>`);
+                html += `</select>`;
+                container.innerHTML = html;
+            }
+            if (config.hasMonth) {
+                let html = `<label for="monthSelect" class="form-label">Mês da Sorte</label><select id="monthSelect" class="form-select">`;
+                MONTHS.forEach(month => html += `<option value="${month}">${month}</option>`);
+                html += `</select>`;
+                container.innerHTML = html;
+            }
+            if (config.hasTrevos) {
+                let html = `<h5 class="mt-3"><i class="fas fa-clover me-2"></i>Selecione 2 Trevos da Sorte</h5><div class="d-flex gap-2">`;
+                for (let i = 1; i <= 6; i++) {
+                    html += `<button class="btn btn-outline-success number-btn trevo-btn" data-trevo="${i}">${i}</button>`;
+                }
+                html += `</div>`;
+                container.innerHTML = html;
+                document.querySelectorAll('.trevo-btn').forEach(btn => btn.addEventListener('click', trevoClickHandler));
+            }
+        }
+
+        function buildSpecialCheckers(config, container) {
+            container.innerHTML = '';
+            container.classList.add('d-none');
+            if (config.hasTrevos) {
+                container.innerHTML = `<label for="drawnTrevosInput" class="form-label">Digite os trevos sorteados:</label><input type="text" class="form-control" id="drawnTrevosInput" placeholder="Ex: 1, 2">`;
+                container.classList.remove('d-none');
+            }
+            if (config.hasMonth) {
+                container.innerHTML = `<label for="drawnMonthInput" class="form-label">Digite o Mês da Sorte:</label><input type="text" class="form-control" id="drawnMonthInput" placeholder="Ex: Janeiro">`;
+                container.classList.remove('d-none');
+            }
+            if (config.hasTeam) {
+                container.innerHTML = `<label for="drawnTeamInput" class="form-label">Digite o Time do Coração sorteado:</label><input type="text" class="form-control" id="drawnTeamInput" placeholder="Ex: Flamengo/RJ">`;
+                container.classList.remove('d-none');
+            }
+        }
+        
+        function updateSelectedNumbersDisplay(selectedNumbers, fixedNumbers, superSeteSelections, selectedTrevos, config) {
+            const selectedNumbersList = document.getElementById('selectedNumbersList');
+            selectedNumbersList.innerHTML = '';
+            
+            let currentSelections = config.isColumnar ? superSeteSelections.flat() : selectedNumbers;
+
+            if (currentSelections.length === 0 && selectedTrevos.length === 0) {
+                selectedNumbersList.innerHTML = '<span class="text-muted">Nenhum número selecionado</span>';
+                return;
+            }
+            
+            if (config.isColumnar) {
+                superSeteSelections.forEach((col, colIndex) => {
+                    if (col.length > 0) {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge bg-secondary me-2 mb-1';
+                        badge.innerHTML = `<strong>Col ${colIndex + 1}:</strong> ${col.join(', ')}`;
+                        selectedNumbersList.appendChild(badge);
+                    }
+                });
+            } else {
+                selectedNumbers.forEach(number => {
+                    const isFixed = fixedNumbers.includes(number);
+                    const badge = document.createElement('span');
+                    badge.className = `badge me-1 mb-1 fs-6 ${isFixed ? 'bg-success' : ''}`;
+                    if (!isFixed) badge.style.backgroundColor = config.color;
+                    badge.textContent = number.toString().padStart(2, '0');
+                    if (isFixed) badge.innerHTML += ' <i class="fas fa-thumbtack fa-xs"></i>';
+                    selectedNumbersList.appendChild(badge);
+                });
+            }
+
+            if (config.hasTrevos && selectedTrevos.length > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-success me-1 mb-1 fs-6';
+                badge.innerHTML = `<i class="fas fa-clover"></i> ${selectedTrevos.join(', ')}`;
+                selectedNumbersList.appendChild(badge);
+            }
+
+            const countBadge = document.createElement('span');
+            countBadge.className = 'badge bg-dark ms-2';
+            countBadge.textContent = `${currentSelections.length} número(s)`;
+            selectedNumbersList.appendChild(countBadge);
+        }
+
+        function displayResults(combinations, totalCostValue, config, fixedNumbers, specialSelections) {
+            document.getElementById('totalCombinations').textContent = `Total de Apostas: ${combinations.length}`;
+            document.getElementById('totalCost').textContent = `Custo Total: ${totalCostValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
+            
+            const combinationsTable = document.getElementById('combinationsTable');
+            combinationsTable.innerHTML = '';
+
+            combinations.forEach((combo, index) => {
+                const row = document.createElement('tr');
+                let numbersHtml = combo.map(num => `<span class="badge ${fixedNumbers.includes(num) ? 'bg-success' : 'bg-light text-dark'} me-1 mb-1">${num.toString().padStart(2, '0')}</span>`).join(' ');
+                
+                if (config.hasTeam) numbersHtml += ` <span class="badge bg-info">${specialSelections.team}</span>`;
+                if (config.hasMonth) numbersHtml += ` <span class="badge bg-info">${specialSelections.month}</span>`;
+                if (config.hasTrevos) numbersHtml += ` <span class="badge bg-success"><i class="fas fa-clover"></i> ${specialSelections.trevos.join(', ')}</span>`;
+
+                row.innerHTML = `
+                    <td>${index + 1}<span class="prize-check-icon ms-1"></span></td>
+                    <td>${numbersHtml}</td>
+                `;
+                combinationsTable.appendChild(row);
+            });
+
+            // Análise de balanceamento
+            analyzeBalance(combinations, config);
+
+            document.getElementById('resultsSection').classList.remove('d-none');
+            document.getElementById('checkHistoryBtnContainer').classList.remove('d-none');
+            document.getElementById('resultCheckerSection').classList.remove('d-none');
+            document.getElementById('prizeSummary').classList.add('d-none');
+            document.getElementById('drawnNumbersInput').value = '';
+            if(document.getElementById('drawnTrevosInput')) document.getElementById('drawnTrevosInput').value = '';
+            if(document.getElementById('drawnMonthInput')) document.getElementById('drawnMonthInput').value = '';
+            if(document.getElementById('drawnTeamInput')) document.getElementById('drawnTeamInput').value = '';
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Função para análise de balanceamento (pares/ímpares, altos/baixos)
+        function analyzeBalance(combinations, config) {
+            if (combinations.length === 0 || config.isColumnar) {
+                document.getElementById('balanceAnalysis').classList.add('d-none');
+                return;
+            }
+
+            const totalNumbers = config.totalNumbers;
+            const midPoint = Math.ceil(totalNumbers / 2);
+            
+            let totalEven = 0, totalOdd = 0;
+            let totalLow = 0, totalHigh = 0;
+            let totalNumbersCount = 0;
+
+            combinations.forEach(combo => {
+                combo.forEach(num => {
+                    totalNumbersCount++;
+                    // Par ou ímpar
+                    if (num % 2 === 0) totalEven++;
+                    else totalOdd++;
+                    
+                    // Alto ou baixo
+                    if (num <= midPoint) totalLow++;
+                    else totalHigh++;
+                });
+            });
+
+            // Calcular porcentagens
+            const evenPercent = Math.round((totalEven / totalNumbersCount) * 100);
+            const oddPercent = Math.round((totalOdd / totalNumbersCount) * 100);
+            const lowPercent = Math.round((totalLow / totalNumbersCount) * 100);
+            const highPercent = Math.round((totalHigh / totalNumbersCount) * 100);
+
+            // Atualizar a UI
+            document.getElementById('evenPercent').textContent = `${evenPercent}% Pares`;
+            document.getElementById('oddPercent').textContent = `${oddPercent}% Ímpares`;
+            document.getElementById('lowPercent').textContent = `${lowPercent}% Baixos`;
+            document.getElementById('highPercent').textContent = `${highPercent}% Altos`;
+
+            // Ajustar classes de acordo com o balanceamento
+            document.getElementById('evenPercent').className = `balance-indicator ${getBalanceClass(evenPercent, 50)}`;
+            document.getElementById('oddPercent').className = `balance-indicator ${getBalanceClass(oddPercent, 50)}`;
+            document.getElementById('lowPercent').className = `balance-indicator ${getBalanceClass(lowPercent, 50)}`;
+            document.getElementById('highPercent').className = `balance-indicator ${getBalanceClass(highPercent, 50)}`;
+
+            // Atualizar barras de progresso
+            document.getElementById('evenProgress').style.width = `${evenPercent}%`;
+            document.getElementById('oddProgress').style.width = `${oddPercent}%`;
+            document.getElementById('lowProgress').style.width = `${lowPercent}%`;
+            document.getElementById('highProgress').style.width = `${highPercent}%`;
+
+            // Gerar recomendações
+            let recommendations = '';
+            if (Math.abs(evenPercent - oddPercent) > 20) {
+                recommendations += `<p class="mb-1"><i class="fas fa-exclamation-triangle text-warning me-1"></i> Seu jogo está desbalanceado entre pares e ímpares. Tente manter uma proporção mais equilibrada (40-60%).</p>`;
+            }
+            
+            if (Math.abs(lowPercent - highPercent) > 20) {
+                recommendations += `<p class="mb-1"><i class="fas fa-exclamation-triangle text-warning me-1"></i> Seu jogo está desbalanceado entre números baixos e altos. Tente manter uma proporção mais equilibrada (40-60%).</p>`;
+            }
+            
+            if (recommendations === '') {
+                recommendations = `<p class="mb-0"><i class="fas fa-check-circle text-success me-1"></i> Seu jogo está bem balanceado entre pares/ímpares e baixos/altos.</p>`;
+            }
+            
+            document.getElementById('balanceRecommendations').innerHTML = recommendations;
+            document.getElementById('balanceAnalysis').classList.remove('d-none');
+        }
+
+        function getBalanceClass(percentage, ideal) {
+            const diff = Math.abs(percentage - ideal);
+            if (diff <= 10) return 'balance-good';
+            if (diff <= 20) return 'balance-fair';
+            return 'balance-poor';
+        }
+
+        function displayPrizeSummary(prizeCounts, totalPrizeMoney, totalCostValue, config) {
+            const prizeList = document.getElementById('prizeList');
+            const financialSummaryList = document.getElementById('financialSummaryList');
+            prizeList.innerHTML = '';
+            let hasPrizes = false;
+            
+            Object.keys(prizeCounts).sort().reverse().forEach(tier => {
+                const count = prizeCounts[tier];
+                if (count > 0) {
+                    hasPrizes = true;
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    let tierText = tier;
+                    if (config.hasTrevos) tierText = `${tier.replace('+', ' acertos + ')} trevo(s)`;
+                    else if (tier === 'month') tierText = 'Mês da Sorte';
+                    else if (tier === 'team') tierText = 'Time do Coração';
+                    else tierText = `${tier} acertos`;
+                    
+                    li.innerHTML = `${tierText} <span class="badge bg-primary rounded-pill">${count}</span>`;
+                    prizeList.appendChild(li);
+                }
+            });
+
+            if (!hasPrizes) {
+                const li = document.createElement('li');
+                li.className = 'list-group-item';
+                li.textContent = 'Nenhuma aposta premiada encontrada.';
+                prizeList.appendChild(li);
+            }
+            
+            financialSummaryList.innerHTML = '';
+            const netResult = totalPrizeMoney - totalCostValue;
+            const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            financialSummaryList.innerHTML = `
+                <li class="list-group-item d-flex justify-content-between align-items-center">Total Gasto<span>${formatCurrency(totalCostValue)}</span></li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">Total em Prêmios<span>${formatCurrency(totalPrizeMoney)}</span></li>
+                <li class="list-group-item d-flex justify-content-between align-items-center fw-bold ${netResult >= 0 ? 'text-success' : 'text-danger'}">Saldo Final<span>${formatCurrency(netResult)}</span></li>
+            `;
+            document.getElementById('prizeSummary').classList.remove('d-none');
+        }
+
+        function displayAnalysisResults(frequency, pairs, count, suggestions, config) {
+            const container = document.getElementById('analysisResultsContainer');
+            let html = `<h4>Análise dos Últimos ${count} Concursos Válidos</h4>`;
+            
+            html += `<div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-sort-numeric-down me-2"></i>Dezenas Mais Sorteadas</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead><tr><th>Dezena</th><th>Frequência</th></tr></thead>
+                                    <tbody>`;
+            frequency.slice(0, 15).forEach(([num, freq]) => {
+                html += `<tr><td><span class="badge bg-secondary">${num.toString().padStart(2,'0')}</span></td><td>${freq}</td></tr>`;
+            });
+            html += `</tbody></table></div></div>`;
+
+            html += `<div class="col-md-6 mt-4 mt-md-0">
+                            <h5><i class="fas fa-link me-2"></i>Pares Mais Sorteados</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead><tr><th>Par</th><th>Frequência</th></tr></thead>
+                                    <tbody>`;
+            pairs.slice(0, 15).forEach(([pair, freq]) => {
+                html += `<tr><td><span class="badge bg-secondary">${pair}</span></td><td>${freq}</td></tr>`;
+            });
+            html += `</tbody></table></div></div>`;
+
+            if (suggestions) {
+                const formatSuggestion = (numbers) => numbers.map(n => `<span class="badge bg-light text-dark">${n.toString().padStart(2, '0')}</span>`).join('');
+                
+                html += `<div class="mt-4">
+                            <h5><i class="fas fa-lightbulb me-2"></i>Sugestões para Próximos Jogos</h5>
+                            <div class="card bg-dark">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0"><span class="badge bg-danger me-2">Quentes</span> Jogo com as dezenas mais sorteadas</h6>
+                                        <button class="btn btn-sm btn-outline-light use-suggestion-btn" data-suggestion="${suggestions.hot.join(',')}"><i class="fas fa-arrow-circle-left me-1"></i> Usar Jogo</button>
+                                    </div>
+                                    <div class="suggestion-numbers">${formatSuggestion(suggestions.hot)}</div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0"><span class="badge bg-primary me-2">Frios</span> Jogo com as dezenas menos sorteadas</h6>
+                                        <button class="btn btn-sm btn-outline-light use-suggestion-btn" data-suggestion="${suggestions.cold.join(',')}"><i class="fas fa-arrow-circle-left me-1"></i> Usar Jogo</button>
+                                    </div>
+                                    <div class="suggestion-numbers">${formatSuggestion(suggestions.cold)}</div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0"><span class="badge bg-warning text-dark me-2">Misto</span> Jogo com dezenas quentes e frias</h6>
+                                        <button class="btn btn-sm btn-outline-light use-suggestion-btn" data-suggestion="${suggestions.mixed.join(',')}"><i class="fas fa-arrow-circle-left me-1"></i> Usar Jogo</button>
+                                    </div>
+                                    <div class="suggestion-numbers">${formatSuggestion(suggestions.mixed)}</div>
+                                </div>
+                            </div>
+                           </div>`;
+            }
+
+            container.innerHTML = html;
+            container.style.display = 'block';
+            
+            if (suggestions) {
+                document.querySelectorAll('.number-btn').forEach(btn => btn.classList.remove('hot-number', 'cold-number'));
+                suggestions.hot.forEach(num => {
+                    const btn = document.querySelector(`.number-btn[data-number="${num}"]`);
+                    if (btn) btn.classList.add('hot-number');
+                });
+                suggestions.cold.forEach(num => {
+                    const btn = document.querySelector(`.number-btn[data-number="${num}"]`);
+                    if (btn) btn.classList.add('cold-number');
+                });
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorAlert').classList.remove('d-none');
+            document.getElementById('errorAlert').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function hideError() {
+            document.getElementById('errorAlert').classList.add('d-none');
+        }
+
+        function hideResults() {
+            document.getElementById('resultsSection').classList.add('d-none');
+            document.getElementById('resultCheckerSection').classList.add('d-none');
+            document.getElementById('prizeSummary').classList.add('d-none');
+            document.getElementById('checkHistoryBtnContainer').classList.add('d-none');
+        }
+
+        function showCopyNotification() {
+            const copyNotification = document.getElementById('copyNotification');
+            copyNotification.classList.remove('d-none');
+            setTimeout(() => {
+                copyNotification.classList.add('d-none');
+            }, 2000);
+        }
+
+        // --- UTILS ---
+        function calculateCombinationsCount(n, k) {
+            if (k < 0 || k > n) return 0;
+            if (k === 0 || k === n) return 1;
+            if (k > n / 2) k = n - k;
+            let res = 1;
+            for (let i = 1; i <= k; i++) {
+                res = res * (n - i + 1) / i;
+            }
+            return Math.round(res);
+        }
+
+        function getCombinations(sourceArray, comboSize) {
+            const result = [];
+            const n = sourceArray.length;
+            if (comboSize < 0 || comboSize > n) return [];
+            const indices = Array.from({ length: comboSize }, (_, i) => i);
+            while (true) {
+                result.push(indices.map(i => sourceArray[i]));
+                let i = comboSize - 1;
+                while (i >= 0 && indices[i] === i + n - comboSize) i--;
+                if (i < 0) break;
+                indices[i]++;
+                for (let j = i + 1; j < comboSize; j++) indices[j] = indices[j - 1] + 1;
+            }
+            return result;
+        }
+
+        function getCartesianProduct(arrays) {
+            return arrays.reduce((a, b) => a.flatMap(x => b.map(y => [...x, y].sort((c, d) => c - d))), [[]]);
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? [
+                parseInt(result[1], 16),
+                parseInt(result[2], 16),
+                parseInt(result[3], 16)
+            ] : [0, 0, 0];
+        }
+
+        function copyCombinationsToClipboard(combinations, config, specialSelections, fixedNumbers) {
+            if (combinations.length === 0) {
+                showError('Não há combinações para copiar.');
+                return;
+            }
+
+            const textToCopy = combinations.map(combo => {
+                let line = combo.map(n => n.toString().padStart(2, '0')).join(' ');
+                if (config.hasTeam) line += ` | ${specialSelections.team}`;
+                if (config.hasMonth) line += ` | ${specialSelections.month}`;
+                if (config.hasTrevos) line += ` | Trevos: ${specialSelections.trevos.join(', ')}`;
+                // Adicionar informação sobre dezenas fixas
+                if (fixedNumbers.length > 0) {
+                    line += ` | Fixas: ${fixedNumbers.map(n => n.toString().padStart(2, '0')).join(' ')}`;
+                }
+                return line;
+            }).join('\n');
+
+            const textArea = document.createElement('textarea');
+            textArea.value = textToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showCopyNotification();
+            } catch (err) {
+                showError('Falha ao copiar os jogos. Tente novamente.');
+                console.error('Copy failed:', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function exportData(format, combinations, config, specialSelections, hitResults, drawnNumbersStr, drawnTrevosStr, fixedNumbers) {
+            if (combinations.length === 0) {
+                showError('Não há combinações para exportar.');
+                return;
+            }
+            const fileName = `${config.displayName.toLowerCase().replace(/[\s-]+/g, '_')}_apostas`;
+            if (format === 'pdf') {
+                exportToStyledPdf(fileName, config, combinations, specialSelections, fixedNumbers);
+            } else if (format === 'png') {
+                exportToPng(fileName, config, combinations, hitResults, drawnNumbersStr, specialSelections, drawnTrevosStr, fixedNumbers);
+            } else {
+                let content = '';
+                let mimeType = '';
+                if (format === 'csv') {
+                    let headers = config.isColumnar ?
+                        Array.from({ length: 7 }, (_, i) => `Coluna ${i + 1}`).join(',') :
+                        Array.from({ length: config.betSize }, (_, i) => `N${i + 1}`).join(',');
+                    if (config.hasTeam) headers += ',Time do Coração';
+                    if (config.hasMonth) headers += ',Mês da Sorte';
+                    if (config.hasTrevos) headers += ',Trevos';
+                    // Adicionar coluna para dezenas fixas, se houver
+                    if (fixedNumbers.length > 0) {
+                        headers += ',Fixas';
+                    }
+                    
+                    content = 'Aposta,' + headers + '\n';
+                    combinations.forEach((combo, index) => {
+                        content += `${index + 1},${combo.join(',')}`;
+                        if (config.hasTeam) content += `,${specialSelections.team}`;
+                        if (config.hasMonth) content += `,${specialSelections.month}`;
+                        if (config.hasTrevos) content += `,${specialSelections.trevos.join(' ')}`;
+                        // Adicionar as dezenas fixas
+                        if (fixedNumbers.length > 0) {
+                            content += `,${fixedNumbers.join(' ')}`;
+                        }
+                        content += '\n';
+                    });
+                    mimeType = 'text/csv';
+                } else { // txt
+                    combinations.forEach((combo, index) => {
+                        content += `Aposta ${String(index + 1).padStart(4, '0')}: ${combo.map(n => n.toString().padStart(2, '0')).join(' ')}`;
+                        if (config.hasTeam) content += ` | Time: ${specialSelections.team}`;
+                        if (config.hasMonth) content += ` | Mês: ${specialSelections.month}`;
+                        if (config.hasTrevos) content += ` | Trevos: ${specialSelections.trevos.join(', ')}`;
+                        // Adicionar informação sobre dezenas fixas
+                        if (fixedNumbers.length > 0) {
+                            content += ` | Fixas: ${fixedNumbers.map(n => n.toString().padStart(2, '0')).join(' ')}`;
+                        }
+                        content += '\n';
+                    });
+                    mimeType = 'text/plain';
+                }
+                const blob = new Blob([content], { type: `${mimeType};charset=utf-8;` });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${fileName}.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            }
+        }
+
+        function exportToPng(fileName, config, combinations, hitResults, drawnNumbersStr, specialSelections, drawnTrevosStr, fixedNumbers) {
+            const exportContainer = document.createElement('div');
+            exportContainer.id = 'png-export-container';
+            exportContainer.style.position = 'absolute';
+            exportContainer.style.left = '-9999px';
+            exportContainer.style.backgroundColor = 'white';
+            exportContainer.style.padding = '20px';
+            exportContainer.style.width = '800px';
+            exportContainer.style.fontFamily = 'Arial, sans-serif';
+            
+            const hasCheckedResults = hitResults && hitResults.length > 0;
+            let headerText = `Total de ${combinations.length} combinações`;
+            if(hasCheckedResults && drawnNumbersStr) {
+                let fullDrawnStr = drawnNumbersStr;
+                if (config.hasTrevos && drawnTrevosStr) {
+                    fullDrawnStr += ` | Trevos: ${drawnTrevosStr}`;
+                }
+                headerText += `<br><small style="font-size: 12px; color: #666;">Conferido com: ${fullDrawnStr}</small>`;
+            }
+            // Adicionar informação sobre dezenas fixas
+            if (fixedNumbers.length > 0) {
+                headerText += `<br><small style="font-size: 12px; color: #666;">Dezenas fixas: ${fixedNumbers.join(', ')}</small>`;
+            }
+
+            let content = `<div style="text-align: center; border-bottom: 2px solid ${config.color}; padding-bottom: 10px; margin-bottom: 15px;"><h1 style="color: ${config.color}; margin: 0;">Apostas - ${config.displayName}</h1><p style="margin: 0; color: #555;">${headerText}</p></div><div style="column-count: 3; column-gap: 20px;">`;
+            
+            combinations.forEach((combo, index) => {
+                let trophyIcon = '';
+                if (hasCheckedResults) {
+                    const hitInfo = hitResults[index];
+                    if (hitInfo) {
+                        const tier = config.hasTrevos ? `${hitInfo.hits}+${hitInfo.trevoHits}` : hitInfo.hits;
+                        const tierIndex = config.prizeTiers.indexOf(tier);
+                        if(tierIndex !== -1) {
+                            if (tierIndex === 0) trophyIcon = '🏆 '; // Maior prêmio
+                            else if (tierIndex < config.prizeTiers.length - 1) trophyIcon = '🥈 '; // Intermediário
+                            else trophyIcon = '🥉 '; // Menor prêmio
+                        }
+                    }
+                }
+
+                let comboText = combo.map(n => n.toString().padStart(2, '0')).join(' ');
+                if (config.hasTeam) comboText += ` | ${specialSelections.team}`;
+                if (config.hasMonth) comboText += ` | ${specialSelections.month}`;
+                if (config.hasTrevos) comboText += ` | Trevos: ${specialSelections.trevos.join(', ')}`;
+
+                content += `<p style="margin: 0 0 8px 0; font-size: 14px; color: #333; break-inside: avoid-column;">${trophyIcon}<strong style="color: ${config.color};">${String(index + 1).padStart(3, '0')}:</strong> ${comboText}</p>`;
+            });
+            content += `</div>`;
+            exportContainer.innerHTML = content;
+            document.body.appendChild(exportContainer);
+            html2canvas(exportContainer, { scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${fileName}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                document.body.removeChild(exportContainer);
+            }).catch(err => {
+                showError("Ocorreu um erro ao gerar a imagem PNG.");
+                console.error("html2canvas error:", err);
+                document.body.removeChild(exportContainer);
+            });
+        }
+
+        function exportToStyledPdf(fileName, config, combinations, specialSelections, fixedNumbers) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pageW = doc.internal.pageSize.getWidth();
+            const pageH = doc.internal.pageSize.getHeight();
+            const margin = 10;
+            const cardGap = 8;
+            const cardsPerRow = 2;
+
+            const cardW = (pageW - (margin * 2) - (cardGap * (cardsPerRow - 1))) / cardsPerRow;
+            
+            const headerH = 10;
+            const gridPadding = 2;
+            const cellMargin = 0.5;
+            const footerH = 7; // Aumentado para acomodar informações extras
+            let gridH;
+
+            if (config.isColumnar) {
+                const numCols = 7;
+                const cellW = (cardW - (gridPadding * 2)) / numCols - cellMargin;
+                const cellH = cellW * 0.9;
+                gridH = 10 * (cellH + cellMargin);
+            } else {
+                const numRowsInGrid = Math.ceil(config.totalNumbers / config.pdfGridCols);
+                const cellW = (cardW - (gridPadding * 2)) / config.pdfGridCols - cellMargin;
+                const cellH = cellW;
+                gridH = numRowsInGrid * (cellH + cellMargin);
+            }
+            const cardH = headerH + gridH + (gridPadding * 2) + footerH;
+
+            const cardsPerCol = Math.floor((pageH - (margin * 2) + cardGap) / (cardH + cardGap));
+            const cardsPerPage = cardsPerRow * cardsPerCol;
+
+            if (cardsPerPage <= 0) {
+                showError("Os volantes são muito grandes para caber em uma página.");
+                return;
+            }
+
+            combinations.forEach((combo, index) => {
+                if (index > 0 && index % cardsPerPage === 0) {
+                    doc.addPage();
+                }
+                const indexOnPage = index % cardsPerPage;
+                const col = indexOnPage % cardsPerRow;
+                const row = Math.floor(indexOnPage / cardsPerRow);
+                const x = margin + col * (cardW + cardGap);
+                const y = margin + row * (cardH + cardGap);
+                drawBetCard(doc, combo, index + 1, x, y, cardW, cardH, config, specialSelections, fixedNumbers);
+            });
+            doc.save(`${fileName}.pdf`);
+        }
+
+        function drawBetCard(doc, combo, betNumber, x, y, w, h, config, specialSelections, fixedNumbers) {
+            const headerH = 10;
+            const padding = 2;
+
+            doc.setDrawColor(220);
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(x, y, w, h, 2, 2, 'FD');
+
+            const [r, g, b] = hexToRgb(config.color);
+            doc.setFillColor(r, g, b);
+            doc.roundedRect(x, y, w, headerH, 2, 2, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.text(config.displayName, x + padding + 2, y + headerH / 2 + 2);
+            doc.setFontSize(9);
+            doc.text(`Aposta #${betNumber}`, x + w - padding - 2, y + headerH / 2 + 2, { align: 'right' });
+
+            const gridX = x + padding;
+            const gridY = y + headerH + padding + 2;
+            const gridW = w - (padding * 2);
+            const cellMargin = 0.5;
+
+            if (config.isColumnar) {
+                const numCols = 7;
+                const cellW = (gridW / numCols) - cellMargin;
+                const cellH = cellW * 0.9;
+                const fontSize = cellW * 0.5;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(fontSize);
+
+                for (let c = 0; c < numCols; c++) {
+                    const colX = gridX + c * (cellW + cellMargin);
+                    for (let num = 0; num < 10; num++) {
+                        const cellY = gridY + num * (cellH + cellMargin);
+                        const numStr = num.toString();
+                        if (combo[c] === num) {
+                            doc.setFillColor(40, 40, 40);
+                            doc.roundedRect(colX, cellY, cellW, cellH, 1, 1, 'F');
+                            doc.setTextColor(255, 255, 255);
+                            doc.text(numStr, colX + cellW / 2, cellY + cellH / 2, { align: 'center', baseline: 'middle' });
+                        } else {
+                            doc.setDrawColor(230);
+                            doc.roundedRect(colX, cellY, cellW, cellH, 1, 1, 'D');
+                            doc.setTextColor(150, 150, 150);
+                            doc.text(numStr, colX + cellW / 2, cellY + cellH / 2, { align: 'center', baseline: 'middle' });
+                        }
+                    }
+                }
+            } else {
+                const cellW = (gridW / config.pdfGridCols) - cellMargin;
+                const cellH = cellW;
+                const fontSize = cellW * 0.45;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(fontSize);
+
+                for (let i = 1; i <= config.totalNumbers; i++) {
+                    const r_grid = Math.floor((i - 1) / config.pdfGridCols);
+                    const c_grid = (i - 1) % config.pdfGridCols;
+                    const cellX = gridX + c_grid * (cellW + cellMargin);
+                    const cellY = gridY + r_grid * (cellH + cellMargin);
+                    const numStr = i.toString().padStart(2, '0');
+
+                    if (combo.includes(i)) {
+                        doc.setFillColor(40, 40, 40);
+                        doc.roundedRect(cellX, cellY, cellW, cellH, 1, 1, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.text(numStr, cellX + cellW / 2, cellY + cellH / 2, { align: 'center', baseline: 'middle' });
+                    } else {
+                        doc.setDrawColor(230);
+                        doc.roundedRect(cellX, cellY, cellW, cellH, 1, 1, 'D');
+                        doc.setTextColor(150, 150, 150);
+                        doc.text(numStr, cellX + cellW / 2, cellY + cellH / 2, { align: 'center', baseline: 'middle' });
+                    }
+                }
+            }
+            
+            // Adiciona informações especiais no rodapé do volante
+            let specialY = y + h - padding - 1;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(80, 80, 80);
+
+            let specialText = '';
+            // Adicionar informação sobre dezenas fixas
+            if (fixedNumbers.length > 0) {
+                specialText += `Fixas: ${fixedNumbers.join(', ')}`;
+            }
+            if (config.hasTeam && specialSelections.team) {
+                specialText += `${specialText ? ' | ' : ''}Time: ${specialSelections.team}`;
+            }
+            if (config.hasMonth && specialSelections.month) {
+                specialText += `${specialText ? ' | ' : ''}Mês: ${specialSelections.month}`;
+            }
+            if (config.hasTrevos && specialSelections.trevos.length > 0) {
+                specialText += `${specialText ? ' | ' : ''}Trevos: ${specialSelections.trevos.join(', ')}`;
+            }
+
+            if (specialText) {
+                // Quebrar texto se for muito longo
+                const maxWidth = w - (padding * 2) - 4;
+                if (doc.getTextWidth(specialText) > maxWidth) {
+                    const lines = doc.splitTextToSize(specialText, maxWidth);
+                    lines.forEach((line, i) => {
+                        doc.text(line, x + padding + 2, specialY - (i * 3));
+                    });
+                } else {
+                    doc.text(specialText, x + padding + 2, specialY);
+                }
+            }
+
+            doc.setTextColor(0, 0, 0);
+        }
+
+        // --- MAIN LOGIC ---
+        // --- DOM ELEMENTS ---
+        const gameModeSelect = document.getElementById('gameModeSelect');
+        const numberGridContainer = document.getElementById('numberGridContainer');
+        const superSeteGridContainer = document.getElementById('superSeteGridContainer');
+        const clearBtn = document.getElementById('clearBtn');
+        const generateBtn = document.getElementById('generateBtn');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const exportCsv = document.getElementById('exportCsv');
+        const exportTxt = document.getElementById('exportTxt');
+        const exportPdf = document.getElementById('exportPdf');
+        const exportPng = document.getElementById('exportPng');
+        const copyGamesBtn = document.getElementById('copyGamesBtn');
+        const gameNameHeaders = document.querySelectorAll('.gameNameHeader');
+        const rulesAlert = document.getElementById('rulesAlert');
+        const selectionHeader = document.getElementById('selectionHeader');
+        const checkResultsBtn = document.getElementById('checkResultsBtn');
+        const generationModeContainer = document.getElementById('generationModeContainer');
+        const generationModeRadios = document.querySelectorAll('input[name="generationMode"]');
+        const fixedNumbersInfo = document.getElementById('fixedNumbersInfo');
+        const specialSelectionContainer = document.getElementById('specialSelectionContainer');
+        const contestNumberInput = document.getElementById('contestNumberInput');
+        const fetchLatestContestBtn = document.getElementById('fetchLatestContestBtn');
+        const analyzeContestBtn = document.getElementById('analyzeContestBtn');
+        const historyAnalysisResult = document.getElementById('historyAnalysisResult');
+        const runAnalysisBtn = document.getElementById('runAnalysisBtn');
+        const contestCountInput = document.getElementById('contestCountInput');
+        const analysisResultsContainer = document.getElementById('analysisResultsContainer');
+        const analysisLoadingSpinner = document.getElementById('analysisLoadingSpinner');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const resetAllBtn = document.getElementById('resetAllBtn');
+        const analyzeRangeBtn = document.getElementById('analyzeRangeBtn');
+        const rangeHistoryAnalysisResult = document.getElementById('rangeHistoryAnalysisResult');
+        const upcomingTab = document.getElementById('upcoming-tab');
+        const latestResultsTab = document.getElementById('latest-results-tab');
+        const updateSheetBtn = document.getElementById('updateSheetBtn');
+
+
+        // --- STATE ---
+        let state = {
+            selectedNumbers: [],
+            fixedNumbers: [],
+            selectedTrevos: [],
+            superSeteSelections: [[],[],[],[],[],[],[]],
+            generatedCombinations: [],
+            currentGameMode: 'lotofacil',
+            totalCostValue: 0,
+            hitResults: [],
+            winningCombinationsInRange: [], // New state for range analysis
+            selectedTeam: null,
+            selectedMonth: null,
+        };
+
+        // --- INITIALIZATION ---
+        function initializeApp() {
+            gameModeSelect.addEventListener('change', (e) => updateUIForGameMode(e.target.value));
+            clearBtn.addEventListener('click', clearSelection);
+            generateBtn.addEventListener('click', handleGenerateClick);
+            checkResultsBtn.addEventListener('click', handleCheckResults);
+            
+            const exportHandler = (format) => (e) => {
+                e.preventDefault();
+                const config = lotteryConfigs[state.currentGameMode];
+                const drawnNumbersStr = document.getElementById('drawnNumbersInput').value.trim();
+                const drawnTrevosStr = document.getElementById('drawnTrevosInput')?.value.trim() || '';
+                exportData(format, state.generatedCombinations, config, getSpecialSelections(), state.hitResults, drawnNumbersStr, drawnTrevosStr, state.fixedNumbers);
+            };
+
+            exportCsv.addEventListener('click', exportHandler('csv'));
+            exportTxt.addEventListener('click', exportHandler('txt'));
+            exportPdf.addEventListener('click', exportHandler('pdf'));
+            exportPng.addEventListener('click', exportHandler('png'));
+
+            copyGamesBtn.addEventListener('click', () => copyCombinationsToClipboard(state.generatedCombinations, lotteryConfigs[state.currentGameMode], getSpecialSelections(), state.fixedNumbers));
+            generationModeRadios.forEach(radio => radio.addEventListener('change', (e) => {
+                fixedNumbersInfo.classList.toggle('d-none', e.target.value !== 'fixo');
+            }));
+            fetchLatestContestBtn.addEventListener('click', handleFetchLatestContest);
+            analyzeContestBtn.addEventListener('click', handleAnalyzeContest);
+            analyzeRangeBtn.addEventListener('click', handleAnalyzeContestRange);
+            runAnalysisBtn.addEventListener('click', runAnalysis);
+            updateSheetBtn.addEventListener('click', handleUpdateSheetClick);
+            analysisResultsContainer.addEventListener('click', handleUseSuggestionClick);
+            selectAllBtn.addEventListener('click', handleSelectAll);
+            resetAllBtn.addEventListener('click', handleResetAll);
+
+            let upcomingDataLoaded = false;
+            upcomingTab.addEventListener('show.bs.tab', function (event) {
+                if (!upcomingDataLoaded) {
+                    fetchUpcomingContests();
+                    upcomingDataLoaded = true;
+                }
+            });
+
+            let latestResultsDataLoaded = false;
+            latestResultsTab.addEventListener('show.bs.tab', function (event) {
+                if (!latestResultsDataLoaded) {
+                    fetchLatestResults();
+                    latestResultsDataLoaded = true;
+                }
+            });
+
+            updateUIForGameMode(state.currentGameMode);
+            restoreState();
+        }
+        
+        function updateUIForGameMode(mode) {
+            state.currentGameMode = mode;
+            const config = lotteryConfigs[mode];
+            
+            applyThemeColor(config.color, config.hoverColor);
+            gameNameHeaders.forEach(h => h.textContent = config.displayName);
+            rulesAlert.innerHTML = `<i class="fas fa-info-circle me-2"></i>Selecione ${config.isColumnar ? 'de 1 a 3 números por coluna' : `entre <strong>${config.minSelection}</strong> e <strong>${config.maxSelection}</strong> números`} para gerar as apostas.`;
+            selectionHeader.innerHTML = `<i class="fas fa-th me-2"></i>Selecione seus números`;
+            document.getElementById('drawnNumbersInput').placeholder = `Ex: ${Array.from({length: config.betSize}, (_, i) => i + 1).join(', ')}`;
+
+            numberGridContainer.classList.toggle('d-none', !!config.isColumnar);
+            superSeteGridContainer.classList.toggle('d-none', !config.isColumnar);
+            generationModeContainer.classList.toggle('d-none', !!config.isColumnar || ['lotomania', 'timemania'].includes(mode));
+            
+            if (config.isColumnar) {
+                initializeSuperSeteGrid(superSeteGridContainer, handleSuperSeteClick);
+            } else {
+                initializeNumberGrid(config.totalNumbers, numberGridContainer, handleNumberClick);
+            }
+
+            buildSpecialSelectors(config, specialSelectionContainer, handleTrevoClick);
+            buildSpecialCheckers(config, document.getElementById('specialCheckerContainer'));
+            clearSelection();
+            analysisResultsContainer.style.display = 'none';
+            
+            document.querySelectorAll('.number-btn').forEach(btn => {
+                btn.classList.remove('hot-number', 'cold-number');
+            });
+        }
+
+        // --- EVENT HANDLERS ---
+        function handleNumberClick(e) {
+            const button = e.currentTarget;
+            const number = parseInt(button.dataset.number);
+            const config = lotteryConfigs[state.currentGameMode];
+            const isSelected = state.selectedNumbers.includes(number);
+            const isFixed = state.fixedNumbers.includes(number);
+            const generationMode = document.querySelector('input[name="generationMode"]:checked').value;
+
+            if (!isSelected) {    
+                if (state.selectedNumbers.length < config.maxSelection) {
+                    state.selectedNumbers.push(number);
+                    button.classList.add('active');
+                } else {
+                    showError(`Você só pode selecionar até ${config.maxSelection} números para a ${config.displayName}.`);
+                }
+            } else if (isSelected && !isFixed && generationMode === 'fixo') {
+                state.fixedNumbers.push(number);
+                button.classList.add('btn-fixed');
+                button.innerHTML += `<i class="fas fa-thumbtack"></i>`;
+            } else {
+                state.selectedNumbers = state.selectedNumbers.filter(n => n !== number);
+                state.fixedNumbers = state.fixedNumbers.filter(n => n !== number);
+                button.classList.remove('active', 'btn-fixed');
+                button.querySelector('.fa-thumbtack')?.remove();
+            }
+            state.selectedNumbers.sort((a, b) => a - b);
+            updateSelectedNumbersDisplay(state.selectedNumbers, state.fixedNumbers, state.superSeteSelections, state.selectedTrevos, config);
+            hideError();
+            hideResults();
+            saveState();
+        }
+        
+        function handleSuperSeteClick(e) {
+            const button = e.currentTarget;
+            const number = parseInt(button.dataset.number);
+            const column = parseInt(button.dataset.column);
+            const config = lotteryConfigs[state.currentGameMode];
+            const isSelected = state.superSeteSelections[column].includes(number);
+            const totalSelected = state.superSeteSelections.flat().length;
+
+            if (!isSelected) {
+                if (totalSelected >= config.maxSelection) {
+                    showError(`Você já selecionou o máximo de ${config.maxSelection} números.`);
+                    return;
+                }
+                if (state.superSeteSelections[column].length >= 3) {
+                     showError(`Você só pode selecionar até 3 números por coluna.`);
+                     return;
+                }
+                state.superSeteSelections[column].push(number);
+                button.classList.add('active');
+            } else {
+                state.superSeteSelections[column] = state.superSeteSelections[column].filter(n => n !== number);
+                button.classList.remove('active');
+            }
+
+            state.superSeteSelections[column].sort((a,b) => a - b);
+            updateSelectedNumbersDisplay(state.selectedNumbers, state.fixedNumbers, state.superSeteSelections, state.selectedTrevos, config);
+            hideError();
+            hideResults();
+            saveState();
+        }
+
+        function handleTrevoClick(e) {
+            const button = e.currentTarget;
+            const trevo = parseInt(button.dataset.trevo);
+            const isSelected = state.selectedTrevos.includes(trevo);
+            const config = lotteryConfigs[state.currentGameMode];
+
+            if(!isSelected) {
+                if(state.selectedTrevos.length < config.trevoSize) {
+                    state.selectedTrevos.push(trevo);
+                    button.classList.add('active');
+                } else {
+                    showError(`Você só pode selecionar ${config.trevoSize} trevos.`);
+                }
+            } else {
+                state.selectedTrevos = state.selectedTrevos.filter(t => t !== trevo);
+                button.classList.remove('active');
+            }
+            state.selectedTrevos.sort((a,b) => a-b);
+            updateSelectedNumbersDisplay(state.selectedNumbers, state.fixedNumbers, state.superSeteSelections, state.selectedTrevos, config);
+            hideError();
+            hideResults();
+            saveState();
+        }
+
+        async function handleGenerateClick() {
+            hideError();
+            hideResults();
+            const config = lotteryConfigs[state.currentGameMode];
+            const generationMode = document.querySelector('input[name="generationMode"]:checked')?.value || 'fechamento';
+
+            let numbersToCombine = state.selectedNumbers;
+            if (config.isColumnar) {
+                // Validação para Super Sete
+                if (state.superSeteSelections.some(col => col.length === 0)) {
+                    showError('Você deve selecionar pelo menos um número em cada uma das 7 colunas.');
+                    return;
+                }
+                 const totalSelections = state.superSeteSelections.flat().length;
+                if (totalSelections < config.minSelection) {
+                    showError(`Você precisa selecionar pelo menos ${config.minSelection} números no total.`);
+                    return;
+                }
+            } else {
+                // Validação para outros jogos
+                if (numbersToCombine.length < config.minSelection) {
+                    showError(`Selecione pelo menos ${config.minSelection} números para gerar as apostas.`);
+                    return;
+                }
+                 if (generationMode === 'fixo' && state.fixedNumbers.length === 0) {
+                    showError('Modo "Dezenas Fixas" selecionado, mas nenhum número foi fixado. Clique novamente em um número selecionado para fixá-lo.');
+                    return;
+                }
+                if (generationMode === 'fixo' && state.fixedNumbers.length >= config.betSize) {
+                    showError(`Você não pode fixar ${config.betSize} ou mais dezenas.`);
+                    return;
+                }
+            }
+
+            if (config.hasTrevos && state.selectedTrevos.length !== config.trevoSize) {
+                showError(`Você precisa selecionar exatamente ${config.trevoSize} trevos.`);
+                return;
+            }
+
+            loadingSpinner.classList.remove('d-none');
+            generateBtn.disabled = true;
+
+            // Use a timeout to allow the UI to update before the heavy computation starts
+            setTimeout(() => {
+                try {
+                    let combinations = [];
+                    if (config.isColumnar) {
+                        const product = getCartesianProduct(state.superSeteSelections);
+                        combinations = product.map(p => p.sort((a,b) => a - b));
+                    } else if (generationMode === 'fixo') {
+                        const variableNumbers = numbersToCombine.filter(n => !state.fixedNumbers.includes(n));
+                        const comboSize = config.betSize - state.fixedNumbers.length;
+                        const variableCombos = getCombinations(variableNumbers, comboSize);
+                        combinations = variableCombos.map(combo => [...state.fixedNumbers, ...combo].sort((a,b) => a - b));
+                    } else {
+                        combinations = getCombinations(numbersToCombine, config.betSize);
+                    }
+                    
+                    if (combinations.length > MAX_COMBINATIONS) {
+                        throw new Error(`O número de combinações (${combinations.length}) é muito grande. O limite é ${MAX_COMBINATIONS}. Por favor, selecione menos números.`);
+                    }
+
+                    state.generatedCombinations = combinations;
+                    state.totalCostValue = combinations.length * config.cost;
+                    displayResults(combinations, state.totalCostValue, config, state.fixedNumbers, getSpecialSelections());
+
+                } catch (error) {
+                    showError(error.message);
+                } finally {
+                    loadingSpinner.classList.add('d-none');
+                    generateBtn.disabled = false;
+                }
+            }, 50);
+        }
+
+        function handleCheckResults() {
+            const config = lotteryConfigs[state.currentGameMode];
+            const drawnNumbersInput = document.getElementById('drawnNumbersInput');
+            const drawnNumbersStr = drawnNumbersInput.value.trim();
+            if (!drawnNumbersStr) {
+                showError("Por favor, digite os números sorteados para conferir.");
+                return;
+            }
+            const drawnNumbers = drawnNumbersStr.split(/[\s,]+/).map(n => parseInt(n)).filter(n => !isNaN(n));
+            
+            let drawnTrevos = [];
+            if (config.hasTrevos) {
+                const drawnTrevosStr = document.getElementById('drawnTrevosInput').value.trim();
+                if(!drawnTrevosStr) {
+                     showError("Por favor, digite os trevos sorteados para conferir.");
+                     return;
+                }
+                drawnTrevos = drawnTrevosStr.split(/[\s,]+/).map(n => parseInt(n)).filter(n => !isNaN(n));
+            }
+
+            let drawnMonth = '';
+            if (config.hasMonth) {
+                drawnMonth = document.getElementById('drawnMonthInput').value.trim();
+            }
+
+            let drawnTeam = '';
+            if (config.hasTeam) {
+                drawnTeam = document.getElementById('drawnTeamInput').value.trim();
+            }
+            
+            const prizeCounts = Object.fromEntries(config.prizeTiers.map(tier => [tier, 0]));
+            if (config.hasMonth) prizeCounts['month'] = 0;
+            if (config.hasTeam) prizeCounts['team'] = 0;
+            let totalPrizeMoney = 0;
+
+            state.hitResults = []; // Clear previous results
+
+            state.generatedCombinations.forEach((combo, index) => {
+                const hits = combo.filter(num => drawnNumbers.includes(num)).length;
+                let trevoHits = 0;
+                if(config.hasTrevos) {
+                    const selectedTrevos = getSpecialSelections().trevos;
+                    trevoHits = selectedTrevos.filter(t => drawnTrevos.includes(t)).length;
+                }
+
+                state.hitResults[index] = { hits, trevoHits }; // Store results for export
+
+                let prizeTier = config.hasTrevos ? `${hits}+${trevoHits}` : hits;
+                if (config.prizeTiers.includes(prizeTier)) {
+                    prizeCounts[prizeTier]++;
+                    totalPrizeMoney += config.prizeValues[prizeTier] || 0;
+                }
+
+                 // Check special prizes
+                const specialSelections = getSpecialSelections();
+                if (config.hasMonth && specialSelections.month.toLowerCase() === drawnMonth.toLowerCase()) {
+                    prizeCounts['month']++;
+                    totalPrizeMoney += config.prizeValues['month'] || 0;
+                }
+                if (config.hasTeam && specialSelections.team.toLowerCase() === drawnTeam.toLowerCase()) {
+                    prizeCounts['team']++;
+                    totalPrizeMoney += config.prizeValues['team'] || 0;
+                }
+            });
+
+            // Update table rows with prize icons
+            const rows = document.getElementById('combinationsTable').rows;
+            state.hitResults.forEach((result, index) => {
+                const iconSpan = rows[index].cells[0].querySelector('.prize-check-icon');
+                if (iconSpan) {
+                    let prizeTier = config.hasTrevos ? `${result.hits}+${result.trevoHits}` : result.hits;
+                    const tierIndex = config.prizeTiers.indexOf(prizeTier);
+                    if (tierIndex !== -1) {
+                         if (tierIndex === 0) iconSpan.innerHTML = '🏆'; // Gold
+                         else if (tierIndex < config.prizeTiers.length / 2) iconSpan.innerHTML = '🥈'; // Silver
+                         else iconSpan.innerHTML = '🥉'; // Bronze
+                         iconSpan.title = `${prizeTier} acertos`;
+                         rows[index].classList.add(tierIndex === 0 ? 'table-success' : 'table-warning');
+                    } else {
+                         iconSpan.innerHTML = '';
+                         rows[index].classList.remove('table-success', 'table-warning');
+                    }
+                }
+            });
+
+            displayPrizeSummary(prizeCounts, totalPrizeMoney, state.totalCostValue, config);
+        }
+
+        function clearSelection() {
+            state.selectedNumbers = [];
+            state.fixedNumbers = [];
+            state.selectedTrevos = [];
+            state.superSeteSelections = [[],[],[],[],[],[],[]];
+            
+            document.querySelectorAll('.number-btn').forEach(btn => {
+                btn.classList.remove('active', 'btn-fixed');
+                 btn.querySelector('.fa-thumbtack')?.remove();
+            });
+            const config = lotteryConfigs[state.currentGameMode];
+            updateSelectedNumbersDisplay(state.selectedNumbers, state.fixedNumbers, state.superSeteSelections, state.selectedTrevos, config);
+            hideError();
+            hideResults();
+            saveState();
+        }
+
+        async function handleFetchLatestContest() {
+            const spinner = fetchLatestContestBtn.querySelector('.spinner-border');
+            spinner.classList.remove('d-none');
+            fetchLatestContestBtn.disabled = true;
+            try {
+                const latestContest = await getLatestContestFromSheetDB(state.currentGameMode);
+                if (latestContest && latestContest.numero) {
+                    contestNumberInput.value = latestContest.numero;
+                } else {
+                    showError("Não foi possível encontrar o último concurso na base de dados.");
+                }
+            } catch (error) {
+                console.error("Erro ao buscar último concurso:", error);
+                showError("Erro de rede ao buscar o último concurso.");
+            } finally {
+                spinner.classList.add('d-none');
+                fetchLatestContestBtn.disabled = false;
+            }
+        }
+        
+        async function handleAnalyzeContest() {
+             const contestNumber = contestNumberInput.value;
+             if (!contestNumber) {
+                 showError("Por favor, insira um número de concurso para analisar.");
+                 return;
+             }
+             const resultContainer = document.getElementById('historyAnalysisResult');
+             resultContainer.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Analisando...';
+             resultContainer.classList.remove('d-none');
+
+             const contestData = await searchSheetDatabase(state.currentGameMode, contestNumber);
+             
+             if (!contestData) {
+                resultContainer.innerHTML = `<div class="alert alert-danger">Concurso #${contestNumber} não encontrado na base de dados.</div>`;
+                return;
+             }
+             
+             checkResultsForContest(contestData, resultContainer);
+        }
+
+        async function handleAnalyzeContestRange() {
+            const startContest = document.getElementById('startContestInput').value;
+            const endContest = document.getElementById('endContestInput').value;
+            if (!startContest || !endContest || parseInt(startContest) > parseInt(endContest)) {
+                showError("Por favor, insira um intervalo de concursos válido.");
+                return;
+            }
+
+            const resultContainer = document.getElementById('rangeHistoryAnalysisResult');
+            resultContainer.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Analisando o intervalo...';
+            resultContainer.classList.remove('d-none');
+
+            try {
+                const contests = await getContestsForAnalysisFromSheetDBByRange(state.currentGameMode, parseInt(startContest), parseInt(endContest));
+                if (contests.length === 0) {
+                     resultContainer.innerHTML = `<div class="alert alert-warning">Nenhum concurso encontrado no intervalo de #${startContest} a #${endContest}.</div>`;
+                     return;
+                }
+                
+                state.winningCombinationsInRange = [];
+                let totalPrizeMoney = 0;
+                const config = lotteryConfigs[state.currentGameMode];
+
+                contests.forEach(contest => {
+                    let contestPrizes = 0;
+                    const winningCombosInContest = [];
+
+                    state.generatedCombinations.forEach(combo => {
+                        const hits = combo.filter(num => contest.dezenas.includes(num)).length;
+                        let trevoHits = 0;
+                        if (config.hasTrevos) {
+                           const selectedTrevos = getSpecialSelections().trevos;
+                           trevoHits = selectedTrevos.filter(t => contest.trevosSorteados.includes(t)).length;
+                        }
+                        
+                        const prizeTier = config.hasTrevos ? `${hits}+${trevoHits}` : hits;
+
+                        if (config.prizeTiers.includes(prizeTier)) {
+                            const prizeValue = config.prizeValues[prizeTier] || 0; // Use estimates
+                            totalPrizeMoney += prizeValue;
+                            contestPrizes += prizeValue;
+                            winningCombosInContest.push({ combo, prizeTier, prizeValue });
+                        }
+                    });
+                    
+                    if (winningCombosInContest.length > 0) {
+                        state.winningCombinationsInRange.push({
+                            contestNumber: contest.numero,
+                            drawnNumbers: contest.dezenas,
+                            drawnTrevos: contest.trevosSorteados,
+                            totalPrizes: contestPrizes,
+                            winningCombos: winningCombosInContest,
+                        });
+                    }
+                });
+
+                displayRangeAnalysisResults(resultContainer, startContest, endContest, totalPrizeMoney);
+
+            } catch(e) {
+                console.error("Error analyzing range:", e);
+                resultContainer.innerHTML = `<div class="alert alert-danger">Ocorreu um erro ao analisar o intervalo.</div>`;
+            }
+        }
+        
+        function displayRangeAnalysisResults(container, start, end, totalPrizeMoney) {
+            const config = lotteryConfigs[state.currentGameMode];
+            const totalCost = state.totalCostValue;
+            const netResult = totalPrizeMoney - totalCost;
+
+            let html = `<div class="alert alert-secondary">
+                <h4>Resumo da Análise: Concursos #${start} a #${end}</h4>
+                <p class="mb-1"><strong>Custo Total das Apostas:</strong> ${totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                <p class="mb-1"><strong>Total Estimado em Prêmios:</strong> ${totalPrizeMoney.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                <p class="mb-0 fw-bold ${netResult >= 0 ? 'text-success' : 'text-danger'}"><strong>Saldo Final:</strong> ${netResult.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+            </div>`;
+
+            if (state.winningCombinationsInRange.length === 0) {
+                html += '<p>Nenhuma aposta foi premiada neste intervalo.</p>';
+                container.innerHTML = html;
+                return;
+            }
+
+            html += `<div class="accordion" id="rangeAccordion">`;
+            state.winningCombinationsInRange.forEach((result, index) => {
+                const drawnTrevosHtml = result.drawnTrevos ? ` | Trevos: ${result.drawnTrevos.join(', ')}` : '';
+                html += `
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading${index}">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}">
+                                <strong>Concurso #${result.contestNumber}</strong> - Prêmios: ${result.totalPrizes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (Sorteado: ${result.drawnNumbers.join(', ')}${drawnTrevosHtml})
+                            </button>
+                        </h2>
+                        <div id="collapse${index}" class="accordion-collapse collapse" data-bs-parent="#rangeAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-group">
+                                    ${result.winningCombos.map(wc => `<li class="list-group-item">Aposta: <strong>${wc.combo.join(', ')}</strong> - Acertos: ${wc.prizeTier} - Prêmio: ${wc.prizeValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function checkResultsForContest(contestData, resultContainer) {
+            const config = lotteryConfigs[state.currentGameMode];
+            let totalPrizeMoney = 0;
+            let winningCombosCount = 0;
+            let htmlResult = `<div class="alert alert-info">
+                <h5>Resultado do Concurso #${contestData.numero}</h5>
+                <p class="lead">${contestData.dezenas.map(d => `<span class="badge bg-light text-dark fs-6 me-1">${d}</span>`).join('')}</p>
+                ${contestData.trevosSorteados ? `<p><strong>Trevos: </strong>${contestData.trevosSorteados.join(', ')}</p>` : ''}
+            </div>`;
+
+            let prizeListHtml = '';
+
+            state.generatedCombinations.forEach(combo => {
+                const hits = combo.filter(num => contestData.dezenas.includes(num)).length;
+                let trevoHits = 0;
+                if (config.hasTrevos) {
+                   const selectedTrevos = getSpecialSelections().trevos;
+                   trevoHits = selectedTrevos.filter(t => contestData.trevosSorteados.includes(t)).length;
+                }
+                const prizeTier = config.hasTrevos ? `${hits}+${trevoHits}` : hits;
+
+                if (config.prizeTiers.includes(prizeTier)) {
+                    winningCombosCount++;
+                    const prizeValue = config.prizeValues[prizeTier] || 0;
+                    totalPrizeMoney += prizeValue;
+                    prizeListHtml += `<li class="list-group-item">Aposta <strong>[${combo.join(', ')}]</strong> acertou <strong>${prizeTier}</strong> e ganhou ~${prizeValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</li>`;
+                }
+            });
+
+            if (winningCombosCount > 0) {
+                htmlResult += `<h6>Você teve ${winningCombosCount} aposta(s) premiada(s)!</h6>`;
+                htmlResult += `<ul class="list-group mb-3">${prizeListHtml}</ul>`;
+            } else {
+                htmlResult += '<p>Nenhuma de suas apostas foi premiada neste concurso.</p>';
+            }
+
+            const totalCost = state.totalCostValue;
+            const netResult = totalPrizeMoney - totalCost;
+            htmlResult += `<div class="alert alert-light mt-3">
+                <strong>Custo Total:</strong> ${totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}<br>
+                <strong>Prêmios Estimados:</strong> ${totalPrizeMoney.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}<br>
+                <strong class="${netResult >= 0 ? 'text-success' : 'text-danger'}">Saldo: ${netResult.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>
+            </div>`;
+
+            resultContainer.innerHTML = htmlResult;
+        }
+
+        async function runAnalysis() {
+            hideError();
+            analysisResultsContainer.style.display = 'none';
+            analysisLoadingSpinner.style.display = 'block';
+
+            const count = parseInt(contestCountInput.value);
+            const gameMode = state.currentGameMode;
+            const config = lotteryConfigs[gameMode];
+            
+            try {
+                const contests = await getContestsForAnalysisFromSheetDB(gameMode, count);
+                if (contests.length === 0) {
+                    showError(`Nenhum concurso de ${config.displayName} encontrado na base de dados local. Tente atualizar os dados.`);
+                    analysisLoadingSpinner.style.display = 'none';
+                    return;
+                }
+
+                // Frequency Analysis
+                const numberFreq = {};
+                const pairFreq = {};
+                
+                contests.forEach(contest => {
+                    const dezenas = contest.dezenas.map(d => parseInt(d)).sort((a,b) => a-b);
+                    // Single number frequency
+                    dezenas.forEach(num => {
+                        numberFreq[num] = (numberFreq[num] || 0) + 1;
+                    });
+                    // Pair frequency
+                    for (let i = 0; i < dezenas.length; i++) {
+                        for (let j = i + 1; j < dezenas.length; j++) {
+                            const pair = `${dezenas[i].toString().padStart(2,'0')}-${dezenas[j].toString().padStart(2,'0')}`;
+                            pairFreq[pair] = (pairFreq[pair] || 0) + 1;
+                        }
+                    }
+                });
+
+                const sortedNumbers = Object.entries(numberFreq).sort((a, b) => b[1] - a[1]);
+                const sortedPairs = Object.entries(pairFreq).sort((a, b) => b[1] - a[1]);
+                
+                let suggestions = null;
+                if (!config.isColumnar) {
+                    const hotNumbers = sortedNumbers.slice(0, config.betSize).map(([num]) => parseInt(num));
+                    const coldNumbers = Object.keys(numberFreq).map(n => parseInt(n))
+                        .sort((a,b) => numberFreq[a] - numberFreq[b])
+                        .slice(0, config.betSize);
+                    
+                    const midPoint = Math.floor(config.betSize / 2);
+                    const mixedNumbers = [...hotNumbers.slice(0, midPoint), ...coldNumbers.slice(0, config.betSize - midPoint)].sort((a,b) => a-b);
+                    suggestions = {
+                        hot: hotNumbers.sort((a,b) => a-b),
+                        cold: coldNumbers.sort((a,b) => a-b),
+                        mixed: mixedNumbers,
+                    };
+                }
+
+                displayAnalysisResults(sortedNumbers, sortedPairs, contests.length, suggestions, config);
+
+            } catch(e) {
+                console.error("Analysis Error:", e);
+                showError("Ocorreu um erro ao realizar a análise.");
+            } finally {
+                analysisLoadingSpinner.style.display = 'none';
+            }
+        }
+
+        // --- NEW/MODIFIED FUNCTIONS ---
+
+        async function handleUpdateSheetClick() {
+            const button = document.getElementById('updateSheetBtn');
+            const spinner = button.querySelector('.spinner-border');
+            const icon = button.querySelector('.fa-sync-alt');
+            
+            if (!SCRIPT_URL || SCRIPT_URL.includes('COLE_A_URL')) {
+                showError("A URL do Script do Google Apps não foi configurada. Atualize a variável SCRIPT_URL no código.");
+                return;
+            }
+
+            button.disabled = true;
+            spinner.classList.remove('d-none');
+            icon.classList.add('d-none');
+            hideError();
+
+            try {
+                const config = lotteryConfigs[state.currentGameMode];
+                const apiName = config.apiName;
+
+                // 1. Get latest contest from API
+                const latestApiContest = await fetchApiData(`https://servicebus2.caixa.gov.br/portaldeloterias/api/${apiName}`);
+                if (!latestApiContest || !latestApiContest.numero) throw new Error("Não foi possível obter o último concurso da API da Caixa.");
+                
+                // 2. Get latest contest from our Sheet DB
+                const latestSheetContest = await getLatestContestFromSheetDB(apiName);
+                const startContestNum = latestSheetContest ? latestSheetContest.numero + 1 : 1;
+                const endContestNum = latestApiContest.numero;
+                
+                if (startContestNum > endContestNum) {
+                    alert('Os dados da sua planilha já estão atualizados!');
+                    return;
+                }
+
+                let contestsToUpdate = [];
+                for (let i = startContestNum; i <= endContestNum; i++) {
+                    const contestData = await fetchApiData(`https://servicebus2.caixa.gov.br/portaldeloterias/api/${apiName}/${i}`);
+                    if (contestData && contestData.numero) {
+                        contestsToUpdate.push(contestData);
+                    }
+                }
+
+                if (contestsToUpdate.length > 0) {
+                    // Send data to Google Apps Script to be saved
+                    const response = await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            game: apiName,
+                            contests: contestsToUpdate
+                        })
+                    });
+
+                    if (!response.ok) throw new Error('Falha ao enviar dados para a planilha.');
+                    
+                    const result = await response.json();
+                    if(result.status !== 'success') throw new Error(result.message || 'Erro no script do Google.');
+                    
+                    // Invalidate cache and show success
+                    sheetDatabaseCache = null;
+                    alert(`${contestsToUpdate.length} novo(s) concurso(s) de ${config.displayName} foram adicionados à planilha!`);
+                    
+                } else {
+                     alert(`Nenhum concurso novo encontrado entre ${startContestNum} e ${endContestNum}.`);
+                }
+
+            } catch (error) {
+                console.error("Erro ao atualizar a planilha:", error);
+                showError(`Erro ao atualizar: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                spinner.classList.add('d-none');
+                icon.classList.remove('d-none');
+            }
+        }
+
+        async function fetchLatestResults() {
+            const container = document.getElementById('latestResultsContainer');
+            container.innerHTML = '';
+            
+            const db = await fetchSheetDatabase();
+            if (!db) {
+                container.innerHTML = `<div class="alert alert-warning">Não foi possível carregar os dados da planilha.</div>`;
+                return;
+            }
+
+            const accordion = document.createElement('div');
+            accordion.className = 'accordion';
+            accordion.id = 'latestResultsAccordion';
+            
+            for (const gameMode in lotteryConfigs) {
+                const config = lotteryConfigs[gameMode];
+                const gameData = db[gameMode] || [];
+                if (gameData.length > 0) {
+                    const latest = gameData.reduce((a, b) => (a.numero > b.numero ? a : b));
+                    const dezenasHtml = latest.dezenas.map(d => `<span class="badge bg-secondary me-1">${d.toString().padStart(2, '0')}</span>`).join(' ');
+                    const trevosHtml = latest.trevosSorteados ? `<br><small><strong>Trevos:</strong> ${latest.trevosSorteados.join(', ')}</small>` : '';
+                    const timeHtml = latest.timeCoracaoMesSorte ? `<br><small><strong>Time:</strong> ${latest.timeCoracaoMesSorte}</small>` : '';
+                    const mesHtml = latest.mesSorte ? `<br><small><strong>Mês:</strong> ${latest.mesSorte}</small>` : '';
+
+                     const item = `
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${gameMode}">
+                                    <strong style="color: ${config.color};">${config.displayName}</strong>&nbsp;- Concurso #${latest.numero} (${latest.dataApuracao})
+                                </button>
+                            </h2>
+                            <div id="collapse-${gameMode}" class="accordion-collapse collapse" data-bs-parent="#latestResultsAccordion">
+                                <div class="accordion-body">
+                                    ${dezenasHtml}
+                                    ${trevosHtml}
+                                    ${timeHtml}
+                                    ${mesHtml}
+                                </div>
+                            </div>
+                        </div>`;
+                    accordion.innerHTML += item;
+                }
+            }
+            container.appendChild(accordion);
+        }
+
+        async function fetchUpcomingContests() {
+            const container = document.getElementById('upcomingContestsContainer');
+            try {
+                const data = await fetchApiData('https://servicebus2.caixa.gov.br/portaldeloterias/api/home/ultimos-resultados');
+                let html = '<div class="row">';
+                for (const gameMode in lotteryConfigs) {
+                    const config = lotteryConfigs[gameMode];
+                    const gameData = data[config.apiName];
+                    if(gameData) {
+                        const nextDrawDate = gameData.dataProximoConcurso;
+                        const prizeEstimate = gameData.valorEstimadoProximoConcurso.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                        html += `
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100" style="border-left: 4px solid ${config.color};">
+                                <div class="card-body">
+                                    <h5 class="card-title">${config.displayName}</h5>
+                                    <p class="card-text mb-1"><strong>Próximo Concurso:</strong> #${gameData.numeroProximoConcurso}</p>
+                                    <p class="card-text mb-1"><strong>Data:</strong> ${nextDrawDate}</p>
+                                    <p class="card-text mb-0"><strong>Prêmio Estimado:</strong> <span class="fw-bold">${prizeEstimate}</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }
+                }
+                html += '</div>';
+                container.innerHTML = html;
+            } catch (error) {
+                console.error("Erro ao buscar próximos concursos:", error);
+                container.innerHTML = '<div class="alert alert-danger">Não foi possível carregar as informações dos próximos concursos.</div>';
+            }
+        }
+
+        function handleUseSuggestionClick(e) {
+            if (!e.target.classList.contains('use-suggestion-btn')) return;
+            
+            const numbersStr = e.target.dataset.suggestion;
+            const numbers = numbersStr.split(',').map(n => parseInt(n));
+            const config = lotteryConfigs[state.currentGameMode];
+
+            if (config.isColumnar) {
+                showError("Sugestões não são aplicáveis para o Super Sete.");
+                return;
+            }
+
+            // Go to generator tab
+            const generatorTab = new bootstrap.Tab(document.getElementById('generator-tab'));
+            generatorTab.show();
+
+            // Clear previous selection
+            clearSelection();
+
+            // Select suggested numbers
+            state.selectedNumbers = numbers;
+            state.selectedNumbers.forEach(num => {
+                const btn = document.querySelector(`.number-btn[data-number="${num}"]`);
+                if(btn) btn.classList.add('active');
+            });
+
+            updateSelectedNumbersDisplay(state.selectedNumbers, state.fixedNumbers, state.superSeteSelections, state.selectedTrevos, config);
+            saveState();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function handleSelectAll() {
+            const config = lotteryConfigs[state.currentGameMode];
+            if (config.isColumnar) {
+                showError("Esta função não se aplica ao Super Sete.");
+                return;
+            }
+            clearSelection();
+            state.selectedNumbers = Array.from({ length: config.totalNumbers }, (_, i) => i + 1);
+            document.querySelectorAll('.number-btn').forEach(btn => btn.classList.add('active'));
+            updateSelectedNumbersDisplay(state.selectedNumbers, state.fixedNumbers, state.superSeteSelections, state.selectedTrevos, config);
+            saveState();
+        }
+
+        function handleResetAll() {
+            if (confirm("Tem certeza que deseja limpar tudo, incluindo os jogos gerados?")) {
+                clearSelection();
+            }
+        }
+        
+        // --- LOCAL STORAGE ---
+        function saveState() {
+            try {
+                localStorage.setItem(`lottery-state-${state.currentGameMode}`, JSON.stringify({
+                    selectedNumbers: state.selectedNumbers,
+                    fixedNumbers: state.fixedNumbers,
+                    selectedTrevos: state.selectedTrevos,
+                    superSeteSelections: state.superSeteSelections
+                }));
+            } catch(e) {
+                console.warn("Could not save state to local storage.", e);
+            }
+        }
+
+        function restoreState() {
+            try {
+                const saved = localStorage.getItem(`lottery-state-${state.currentGameMode}`);
+                if (saved) {
+                    const restoredState = JSON.parse(saved);
+                    const config = lotteryConfigs[state.currentGameMode];
+
+                    if (config.isColumnar) {
+                        state.superSeteSelections = restoredState.superSeteSelections || [[],[],[],[],[],[],[]];
+                        state.superSeteSelections.flat().forEach(num => {
+                             const colIndex = state.superSeteSelections.findIndex(c => c.includes(num));
+                             const btn = document.querySelector(`.number-btn[data-number="${num}"][data-column="${colIndex}"]`);
+                             if (btn) btn.classList.add('active');
+                        });
+                    } else {
+                        state.selectedNumbers = restoredState.selectedNumbers || [];
+                        state.fixedNumbers = restoredState.fixedNumbers || [];
+                        state.selectedNumbers.forEach(num => {
+                            const btn = document.querySelector(`.number-btn[data-number="${num}"]`);
+                            if (btn) btn.classList.add('active');
+                        });
+                        state.fixedNumbers.forEach(num => {
+                            const btn = document.querySelector(`.number-btn[data-number="${num}"]`);
+                            if (btn) {
+                                btn.classList.add('btn-fixed');
+                                btn.innerHTML += `<i class="fas fa-thumbtack"></i>`;
+                            }
+                        });
+                    }
+                    
+                    if (config.hasTrevos) {
+                        state.selectedTrevos = restoredState.selectedTrevos || [];
+                        state.selectedTrevos.forEach(trevo => {
+                            const btn = document.querySelector(`.trevo-btn[data-trevo="${trevo}"]`);
+                            if (btn) btn.classList.add('active');
+                        });
+                    }
+                    updateSelectedNumbersDisplay(state.selectedNumbers, state.fixedNumbers, state.superSeteSelections, state.selectedTrevos, config);
+                }
+            } catch(e) {
+                 console.warn("Could not restore state from local storage.", e);
+            }
+        }
+
+        function getSpecialSelections() {
+            const config = lotteryConfigs[state.currentGameMode];
+            let special = { trevos: state.selectedTrevos };
+            if (config.hasTeam) special.team = document.getElementById('teamSelect').value;
+            if (config.hasMonth) special.month = document.getElementById('monthSelect').value;
+            return special;
+        }
+
+        initializeApp();
+    });
+    </script>
 </body>
 </html>
